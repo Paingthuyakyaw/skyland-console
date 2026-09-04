@@ -9,50 +9,386 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
-import { Route as IndexRouteImport } from "./routes/index"
+import { Route as AuthenticatedRouteImport } from "./routes/_authenticated"
+import { Route as authLoginRouteImport } from "./routes/(auth)/login"
+import { Route as AuthenticatedIndexRouteImport } from "./routes/_authenticated/index"
+import { Route as AuthenticatedBookingsIndexRouteImport } from "./routes/_authenticated/bookings/index"
+import { Route as AuthenticatedComboToursIndexRouteImport } from "./routes/_authenticated/combo-tours/index"
+import { Route as AuthenticatedCustomersIndexRouteImport } from "./routes/_authenticated/customers/index"
+import { Route as AuthenticatedDashboardIndexRouteImport } from "./routes/_authenticated/dashboard/index"
+import { Route as AuthenticatedHolidayPackagesIndexRouteImport } from "./routes/_authenticated/holiday-packages/index"
+import { Route as AuthenticatedInquiriesIndexRouteImport } from "./routes/_authenticated/inquiries/index"
+import { Route as AuthenticatedPaymentsIndexRouteImport } from "./routes/_authenticated/payments/index"
+import { Route as AuthenticatedPromotionsIndexRouteImport } from "./routes/_authenticated/promotions/index"
+import { Route as AuthenticatedReportsIndexRouteImport } from "./routes/_authenticated/reports/index"
+import { Route as AuthenticatedSettingsIndexRouteImport } from "./routes/_authenticated/settings/index"
+import { Route as AuthenticatedStaffIndexRouteImport } from "./routes/_authenticated/staff/index"
+import { Route as AuthenticatedToursIndexRouteImport } from "./routes/_authenticated/tours/index"
+import { Route as AuthenticatedWebsiteIndexRouteImport } from "./routes/_authenticated/website/index"
 
-const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: "/_authenticated",
   getParentRoute: () => rootRouteImport,
 } as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: "/(auth)/login",
+  path: "/login",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBookingsIndexRoute =
+  AuthenticatedBookingsIndexRouteImport.update({
+    id: "/bookings/",
+    path: "/bookings/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedComboToursIndexRoute =
+  AuthenticatedComboToursIndexRouteImport.update({
+    id: "/combo-tours/",
+    path: "/combo-tours/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCustomersIndexRoute =
+  AuthenticatedCustomersIndexRouteImport.update({
+    id: "/customers/",
+    path: "/customers/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: "/dashboard/",
+    path: "/dashboard/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedHolidayPackagesIndexRoute =
+  AuthenticatedHolidayPackagesIndexRouteImport.update({
+    id: "/holiday-packages/",
+    path: "/holiday-packages/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedInquiriesIndexRoute =
+  AuthenticatedInquiriesIndexRouteImport.update({
+    id: "/inquiries/",
+    path: "/inquiries/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPaymentsIndexRoute =
+  AuthenticatedPaymentsIndexRouteImport.update({
+    id: "/payments/",
+    path: "/payments/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPromotionsIndexRoute =
+  AuthenticatedPromotionsIndexRouteImport.update({
+    id: "/promotions/",
+    path: "/promotions/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedReportsIndexRoute =
+  AuthenticatedReportsIndexRouteImport.update({
+    id: "/reports/",
+    path: "/reports/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: "/settings/",
+    path: "/settings/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedStaffIndexRoute = AuthenticatedStaffIndexRouteImport.update({
+  id: "/staff/",
+  path: "/staff/",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedToursIndexRoute = AuthenticatedToursIndexRouteImport.update({
+  id: "/tours/",
+  path: "/tours/",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedWebsiteIndexRoute =
+  AuthenticatedWebsiteIndexRouteImport.update({
+    id: "/website/",
+    path: "/website/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute
+  "/": typeof AuthenticatedIndexRoute
+  "/login": typeof authLoginRoute
+  "/bookings/": typeof AuthenticatedBookingsIndexRoute
+  "/combo-tours/": typeof AuthenticatedComboToursIndexRoute
+  "/customers/": typeof AuthenticatedCustomersIndexRoute
+  "/dashboard/": typeof AuthenticatedDashboardIndexRoute
+  "/holiday-packages/": typeof AuthenticatedHolidayPackagesIndexRoute
+  "/inquiries/": typeof AuthenticatedInquiriesIndexRoute
+  "/payments/": typeof AuthenticatedPaymentsIndexRoute
+  "/promotions/": typeof AuthenticatedPromotionsIndexRoute
+  "/reports/": typeof AuthenticatedReportsIndexRoute
+  "/settings/": typeof AuthenticatedSettingsIndexRoute
+  "/staff/": typeof AuthenticatedStaffIndexRoute
+  "/tours/": typeof AuthenticatedToursIndexRoute
+  "/website/": typeof AuthenticatedWebsiteIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute
+  "/login": typeof authLoginRoute
+  "/": typeof AuthenticatedIndexRoute
+  "/bookings": typeof AuthenticatedBookingsIndexRoute
+  "/combo-tours": typeof AuthenticatedComboToursIndexRoute
+  "/customers": typeof AuthenticatedCustomersIndexRoute
+  "/dashboard": typeof AuthenticatedDashboardIndexRoute
+  "/holiday-packages": typeof AuthenticatedHolidayPackagesIndexRoute
+  "/inquiries": typeof AuthenticatedInquiriesIndexRoute
+  "/payments": typeof AuthenticatedPaymentsIndexRoute
+  "/promotions": typeof AuthenticatedPromotionsIndexRoute
+  "/reports": typeof AuthenticatedReportsIndexRoute
+  "/settings": typeof AuthenticatedSettingsIndexRoute
+  "/staff": typeof AuthenticatedStaffIndexRoute
+  "/tours": typeof AuthenticatedToursIndexRoute
+  "/website": typeof AuthenticatedWebsiteIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  "/": typeof IndexRoute
+  "/_authenticated": typeof AuthenticatedRouteWithChildren
+  "/(auth)/login": typeof authLoginRoute
+  "/_authenticated/": typeof AuthenticatedIndexRoute
+  "/_authenticated/bookings/": typeof AuthenticatedBookingsIndexRoute
+  "/_authenticated/combo-tours/": typeof AuthenticatedComboToursIndexRoute
+  "/_authenticated/customers/": typeof AuthenticatedCustomersIndexRoute
+  "/_authenticated/dashboard/": typeof AuthenticatedDashboardIndexRoute
+  "/_authenticated/holiday-packages/": typeof AuthenticatedHolidayPackagesIndexRoute
+  "/_authenticated/inquiries/": typeof AuthenticatedInquiriesIndexRoute
+  "/_authenticated/payments/": typeof AuthenticatedPaymentsIndexRoute
+  "/_authenticated/promotions/": typeof AuthenticatedPromotionsIndexRoute
+  "/_authenticated/reports/": typeof AuthenticatedReportsIndexRoute
+  "/_authenticated/settings/": typeof AuthenticatedSettingsIndexRoute
+  "/_authenticated/staff/": typeof AuthenticatedStaffIndexRoute
+  "/_authenticated/tours/": typeof AuthenticatedToursIndexRoute
+  "/_authenticated/website/": typeof AuthenticatedWebsiteIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/"
+  fullPaths:
+    | "/"
+    | "/login"
+    | "/bookings/"
+    | "/combo-tours/"
+    | "/customers/"
+    | "/dashboard/"
+    | "/holiday-packages/"
+    | "/inquiries/"
+    | "/payments/"
+    | "/promotions/"
+    | "/reports/"
+    | "/settings/"
+    | "/staff/"
+    | "/tours/"
+    | "/website/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/"
-  id: "__root__" | "/"
+  to:
+    | "/login"
+    | "/"
+    | "/bookings"
+    | "/combo-tours"
+    | "/customers"
+    | "/dashboard"
+    | "/holiday-packages"
+    | "/inquiries"
+    | "/payments"
+    | "/promotions"
+    | "/reports"
+    | "/settings"
+    | "/staff"
+    | "/tours"
+    | "/website"
+  id:
+    | "__root__"
+    | "/_authenticated"
+    | "/(auth)/login"
+    | "/_authenticated/"
+    | "/_authenticated/bookings/"
+    | "/_authenticated/combo-tours/"
+    | "/_authenticated/customers/"
+    | "/_authenticated/dashboard/"
+    | "/_authenticated/holiday-packages/"
+    | "/_authenticated/inquiries/"
+    | "/_authenticated/payments/"
+    | "/_authenticated/promotions/"
+    | "/_authenticated/reports/"
+    | "/_authenticated/settings/"
+    | "/_authenticated/staff/"
+    | "/_authenticated/tours/"
+    | "/_authenticated/website/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  authLoginRoute: typeof authLoginRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    "/": {
-      id: "/"
+    "/_authenticated": {
+      id: "/_authenticated"
+      path: ""
+      fullPath: "/"
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/(auth)/login": {
+      id: "/(auth)/login"
+      path: "/login"
+      fullPath: "/login"
+      preLoaderRoute: typeof authLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/_authenticated/": {
+      id: "/_authenticated/"
       path: "/"
       fullPath: "/"
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/bookings/": {
+      id: "/_authenticated/bookings/"
+      path: "/bookings"
+      fullPath: "/bookings/"
+      preLoaderRoute: typeof AuthenticatedBookingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/combo-tours/": {
+      id: "/_authenticated/combo-tours/"
+      path: "/combo-tours"
+      fullPath: "/combo-tours/"
+      preLoaderRoute: typeof AuthenticatedComboToursIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/customers/": {
+      id: "/_authenticated/customers/"
+      path: "/customers"
+      fullPath: "/customers/"
+      preLoaderRoute: typeof AuthenticatedCustomersIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/dashboard/": {
+      id: "/_authenticated/dashboard/"
+      path: "/dashboard"
+      fullPath: "/dashboard/"
+      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/holiday-packages/": {
+      id: "/_authenticated/holiday-packages/"
+      path: "/holiday-packages"
+      fullPath: "/holiday-packages/"
+      preLoaderRoute: typeof AuthenticatedHolidayPackagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/inquiries/": {
+      id: "/_authenticated/inquiries/"
+      path: "/inquiries"
+      fullPath: "/inquiries/"
+      preLoaderRoute: typeof AuthenticatedInquiriesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/payments/": {
+      id: "/_authenticated/payments/"
+      path: "/payments"
+      fullPath: "/payments/"
+      preLoaderRoute: typeof AuthenticatedPaymentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/promotions/": {
+      id: "/_authenticated/promotions/"
+      path: "/promotions"
+      fullPath: "/promotions/"
+      preLoaderRoute: typeof AuthenticatedPromotionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/reports/": {
+      id: "/_authenticated/reports/"
+      path: "/reports"
+      fullPath: "/reports/"
+      preLoaderRoute: typeof AuthenticatedReportsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/settings/": {
+      id: "/_authenticated/settings/"
+      path: "/settings"
+      fullPath: "/settings/"
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/staff/": {
+      id: "/_authenticated/staff/"
+      path: "/staff"
+      fullPath: "/staff/"
+      preLoaderRoute: typeof AuthenticatedStaffIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/tours/": {
+      id: "/_authenticated/tours/"
+      path: "/tours"
+      fullPath: "/tours/"
+      preLoaderRoute: typeof AuthenticatedToursIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/website/": {
+      id: "/_authenticated/website/"
+      path: "/website"
+      fullPath: "/website/"
+      preLoaderRoute: typeof AuthenticatedWebsiteIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedBookingsIndexRoute: typeof AuthenticatedBookingsIndexRoute
+  AuthenticatedComboToursIndexRoute: typeof AuthenticatedComboToursIndexRoute
+  AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
+  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedHolidayPackagesIndexRoute: typeof AuthenticatedHolidayPackagesIndexRoute
+  AuthenticatedInquiriesIndexRoute: typeof AuthenticatedInquiriesIndexRoute
+  AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
+  AuthenticatedPromotionsIndexRoute: typeof AuthenticatedPromotionsIndexRoute
+  AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedStaffIndexRoute: typeof AuthenticatedStaffIndexRoute
+  AuthenticatedToursIndexRoute: typeof AuthenticatedToursIndexRoute
+  AuthenticatedWebsiteIndexRoute: typeof AuthenticatedWebsiteIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedBookingsIndexRoute: AuthenticatedBookingsIndexRoute,
+  AuthenticatedComboToursIndexRoute: AuthenticatedComboToursIndexRoute,
+  AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
+  AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+  AuthenticatedHolidayPackagesIndexRoute:
+    AuthenticatedHolidayPackagesIndexRoute,
+  AuthenticatedInquiriesIndexRoute: AuthenticatedInquiriesIndexRoute,
+  AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
+  AuthenticatedPromotionsIndexRoute: AuthenticatedPromotionsIndexRoute,
+  AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedStaffIndexRoute: AuthenticatedStaffIndexRoute,
+  AuthenticatedToursIndexRoute: AuthenticatedToursIndexRoute,
+  AuthenticatedWebsiteIndexRoute: AuthenticatedWebsiteIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  authLoginRoute: authLoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import type { QueryClient } from "@tanstack/react-query"
 
 import { ThemeProvider } from "@/components/theme-provider.tsx"
+import { Toaster } from "sonner"
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient
@@ -15,8 +16,9 @@ export const Route = createRootRouteWithContext<{
 
 function RootLayout() {
   return (
-    <ThemeProvider>
+    <ThemeProvider defaultTheme="light">
       <Outlet />
+      <Toaster position="top-right" />
       <TanStackRouterDevtools position="bottom-left" />
       <ReactQueryDevtools buttonPosition="bottom-right" />
     </ThemeProvider>
