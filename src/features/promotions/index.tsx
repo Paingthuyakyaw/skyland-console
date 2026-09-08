@@ -1,7 +1,10 @@
 
 const PromotionsFeature = () => {
   return (
-    <div>PromotionsFeature</div>
+   <>
+   <div className="font-bold text-2xl">Promotions and Coupons</div>
+   <p>Create, target, and monitor checkout offers across your tours.</p>
+   </>
   )
 }
 

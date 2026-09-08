@@ -28,12 +28,13 @@ function DialogCloseButton() {
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center gap-2">
-          <div className="grid flex-1 gap-2">
-            <Input placeholder=""/>
-          </div>
+          <Input placeholder="" className="flex-1" />
+          <Button>Add</Button>
         </div>
-        <DialogFooter className="sm:justify-start">
-          <DialogClose render={<Button type="button">Close</Button>} />
+        <DialogFooter className="sm:justify-end">
+          <DialogClose render={<Button type="button"
+          variant={"outline"}
+          >Done</Button>} />
         </DialogFooter>
       </DialogContent>
     </Dialog>

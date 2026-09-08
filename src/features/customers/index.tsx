@@ -1,8 +1,11 @@
 
 const CustomerFeature = () => {
   return (
-    <div>CustomerFeature</div>
-  )
+  <>
+    <div className="font-bold text-2xl">Customers</div>
+    <p>Your full customer base with lifetime value and history.</p>
+  
+  </>)
 }
 
 export default CustomerFeature

@@ -1,7 +1,10 @@
 
 const PaymentFeature = () => {
   return (
-    <div>PaymentFeature</div>
+    <>
+    <div className="font-bold text-2xl">Payments & Revenues</div>
+    <p>Track cash flow, methods and transaction history.</p>
+    </>
   )
 }
 

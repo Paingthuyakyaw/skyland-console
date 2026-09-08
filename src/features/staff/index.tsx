@@ -1,7 +1,10 @@
 
 const StaffFeature = () => {
   return (
-    <div>StaffFeature</div>
+    <>
+    <div className="font-bold text-2xl">Staff Management</div>
+    <p>Manage team members, roles and access permissions.</p>
+    </>
   )
 }
 

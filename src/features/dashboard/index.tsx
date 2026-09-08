@@ -1,7 +1,9 @@
 
 const DashboardFeature = () => {
   return (
-    <div>DashboardFeature</div>
+    <>
+    <div className="font-bold text-2xl">Dashboard</div>
+    </>
   )
 }
 
