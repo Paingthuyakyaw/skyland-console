@@ -1,47 +1,12 @@
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { useComboCategories } from "@/store/server/combo/query"
 
 import { PlusIcon } from "lucide-react"
-
-function DialogCloseButton() {
-  const {data} = useComboCategories();
-  return (
-    <Dialog>
-      <DialogTrigger render={<Button variant="outline">Manage Categories</Button>} />
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold">Manage combo tour categories</DialogTitle>
-          <DialogDescription>
-            
-            <p>Combo tours use primary categories only</p>
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex items-center gap-2">
-          <Input placeholder="" className="flex-1" />
-          <Button>Add</Button>
-        </div>
-        <DialogFooter className="sm:justify-end">
-          <DialogClose render={<Button type="button"
-          variant={"outline"}
-          >Done</Button>} />
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
+import { DialogCloseButton } from "@/components/custom-dialog"
+import { useState } from "react";
 
 const ComboToursFeature = () => {
+  const [open, setOpen] = useState(false);
+
   return (
     <>
       <div className="flex justify-between items-center">
@@ -53,7 +18,7 @@ const ComboToursFeature = () => {
           </p>
         </div>
         <div className="flex gap-2 text-sm">
-          <DialogCloseButton />
+          <DialogCloseButton open={open} setOpen={setOpen} btn="Manage Categories"/>
           <Button>
             <PlusIcon />
             New Combo Tours
