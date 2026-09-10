@@ -2,6 +2,12 @@ import { useBoundStore } from "@/store/client/use-store"
 import Axios from "axios"
 import { toast } from "sonner"
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    skipAuthRedirect?: boolean
+  }
+}
+
 export const axios = Axios.create({
   baseURL: import.meta.env.VITE_BASE_URL,
   headers: {
@@ -25,9 +31,7 @@ axios.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status
-    const skipAuthRedirect = (error.config as { skipAuthRedirect?: boolean })
-      ?.skipAuthRedirect
-    if ((status === 401 || status === 403) && !skipAuthRedirect) {
+    if ((status === 401 || status === 403) && !error.config?.skipAuthRedirect) {
       useBoundStore.getState().removeAuth()
       window.location.href = "/login"
       toast.error("You've been logout!")

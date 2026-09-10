@@ -42,12 +42,12 @@ export const Route = createFileRoute("/(auth)/login")({
 function LoginPage() {
   const { redirect: redirectTo } = Route.useSearch()
   const login = useLogin(redirectTo)
-  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    login.mutate({ username, password })
+    login.mutate({ email, password })
   }
 
   return (
@@ -90,14 +90,15 @@ function LoginPage() {
             <form id="login-form" onSubmit={handleSubmit}>
               <FieldGroup className="gap-5">
                 <Field className="gap-2">
-                  <FieldLabel htmlFor="username">Username</FieldLabel>
+                  <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
-                    id="username"
-                    name="username"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    placeholder="Text"
-                    autoComplete="off"
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
                     required
                   />
                 </Field>
@@ -109,8 +110,8 @@ function LoginPage() {
                     name="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Text"
-                    autoComplete="off"
+                    placeholder="Password"
+                    autoComplete="current-password"
                     required
                   />
                 </Field>

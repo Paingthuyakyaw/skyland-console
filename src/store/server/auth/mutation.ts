@@ -5,21 +5,55 @@ import { useRouter } from "@tanstack/react-router"
 import { isAxiosError } from "axios"
 import { toast } from "sonner"
 
-interface LoginPayload {
-  username: string
+export interface LoginPayload {
+  email: string
   password: string
 }
 
-function tokenFromHeaders(headers: Record<string, unknown>) {
-  const rawToken =
-    headers["jwt-token"] ?? headers["Jwt-Token"] ?? headers["JWT-TOKEN"]
-  if (typeof rawToken !== "string" || !rawToken.trim()) {
-    return null
-  }
-  return rawToken
+interface TokenResponse {
+  accessToken: string
+  refreshToken: string
+  tokenType?: string
+  expiresIn?: number
 }
 
-const login = (payload: LoginPayload) => axios.post("auth/login", payload)
+interface ApiResponse<T> {
+  success: boolean
+  message?: string
+  data: T
+}
+
+function apiErrorMessage(err: unknown) {
+  if (!isAxiosError(err)) {
+    return "Login Failed"
+  }
+
+  const data = err.response?.data as
+    { detail?: unknown; message?: unknown; title?: unknown } | undefined
+  const message = [data?.detail, data?.message, data?.title].find(
+    (value): value is string =>
+      typeof value === "string" && Boolean(value.trim())
+  )
+  if (message) {
+    return message
+  }
+
+  const status = err.response?.status
+  if (status === 400 || status === 401) {
+    return "Email or password is incorrect"
+  }
+
+  return "Login Failed"
+}
+
+const login = async (payload: LoginPayload) => {
+  const { data } = await axios.post<ApiResponse<TokenResponse>>(
+    "auth/login",
+    payload,
+    { skipAuthRedirect: true }
+  )
+  return data
+}
 
 export function useLogin(redirect = "/") {
   const { setAuth } = useBoundStore()
@@ -27,22 +61,21 @@ export function useLogin(redirect = "/") {
 
   return useMutation({
     mutationFn: (payload: LoginPayload) => login(payload),
-    onSuccess: (data) => {
-      const rawToken = tokenFromHeaders(data.headers ?? {})
-      if (!rawToken) {
-        toast.error("Login response did not include a session token.")
+    onSuccess: (response) => {
+      const accessToken = response.data?.accessToken
+      if (!accessToken) {
+        toast.error(
+          response.message || "Login response did not include a session token."
+        )
         return
       }
 
-      setAuth(rawToken)
-      toast.success("Login Successful")
+      setAuth(accessToken, response.data.refreshToken)
+      toast.success(response.message || "Login Successful")
       void router.navigate({ href: redirect })
     },
     onError: (err) => {
-      const status = isAxiosError(err) ? err.response?.status : undefined
-      toast.error(
-        status === 400 ? "Username or Password incorrect" : "Login Failed"
-      )
+      toast.error(apiErrorMessage(err))
     },
   })
 }
