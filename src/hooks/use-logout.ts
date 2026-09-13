@@ -1,4 +1,5 @@
 import { useBoundStore } from "@/store/client/use-store"
+import { clearAuthRefresh } from "@/store/server/auth/refresh"
 import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "@tanstack/react-router"
 import { useCallback } from "react"
@@ -8,6 +9,7 @@ export function useLogout() {
   const queryClient = useQueryClient()
 
   return useCallback(() => {
+    clearAuthRefresh()
     useBoundStore.getState().removeAuth()
     queryClient.clear()
     void router.navigate({ to: "/login", search: { redirect: "/" } })

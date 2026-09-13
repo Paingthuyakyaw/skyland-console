@@ -13,17 +13,9 @@ import {
 import { Link } from "@tanstack/react-router"
 
 import { cn } from "@/lib/utils"
+import { getLocale, LOCALES } from "@/lib/locales"
 import { useLogout } from "@/hooks/use-logout"
-
-const LANGUAGES = [
-  { code: "en", label: "English", flag: "🇬🇧" },
-  { code: "ar", label: "العربية", flag: "🇦🇪" },
-  { code: "fr", label: "Français", flag: "🇫🇷" },
-  { code: "de", label: "Deutsch", flag: "🇩🇪" },
-  { code: "es", label: "Español", flag: "🇪🇸" },
-  { code: "zh", label: "中文", flag: "🇨🇳" },
-  { code: "ru", label: "Русский", flag: "🇷🇺" },
-] as const
+import { useBoundStore } from "@/store/client/use-store"
 
 const NOTIFICATIONS = [
   ["New booking SKY-24815", "Amelia Hartwell · Evening Desert Safari", "2m"],
@@ -43,12 +35,12 @@ export function AppHeader({
   onMobileOpen,
 }: AppHeaderProps) {
   const logout = useLogout()
+  const locale = useBoundStore((state) => state.locale)
+  const setLocale = useBoundStore((state) => state.setLocale)
+  const lang = getLocale(locale)
   const [notifOpen, setNotifOpen] = React.useState(false)
   const [userOpen, setUserOpen] = React.useState(false)
   const [langOpen, setLangOpen] = React.useState(false)
-  const [lang, setLang] = React.useState<(typeof LANGUAGES)[number]>(
-    LANGUAGES[0]
-  )
 
   return (
     <header className="z-20 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card/80 px-4 backdrop-blur sm:px-6">
@@ -103,12 +95,12 @@ export function AppHeader({
               <div className="px-2 pt-1 pb-1.5 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
                 Interface language
               </div>
-              {LANGUAGES.map((item) => (
+              {LOCALES.map((item) => (
                 <button
                   key={item.code}
                   type="button"
                   onClick={() => {
-                    setLang(item)
+                    setLocale(item.code)
                     setLangOpen(false)
                   }}
                   className={cn(

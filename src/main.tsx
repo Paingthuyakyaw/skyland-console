@@ -4,7 +4,10 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import { RouterProvider, createRouter } from "@tanstack/react-router"
 
 import { queryClient } from "@/lib/query-client.ts"
+import { bootstrapAuthRefresh } from "@/store/server/auth/refresh"
 import { routeTree } from "./routeTree.gen"
+
+bootstrapAuthRefresh()
 
 import "./index.css"
 
@@ -30,3 +33,5 @@ createRoot(document.getElementById("root")!).render(
     <RouterProvider router={router} />
   </StrictMode>
 )
+
+

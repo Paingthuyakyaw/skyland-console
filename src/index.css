@@ -47,6 +47,12 @@
   --color-background: var(--background);
   --color-status-cancelled: var(--status-cancelled);
   --color-status-cancelled-bg: var(--status-cancelled-bg);
+  --color-status-confirmed: var(--status-confirmed);
+  --color-status-confirmed-bg: var(--status-confirmed-bg);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-bg: var(--status-pending-bg);
+  --color-status-new: var(--status-new);
+  --color-status-new-bg: var(--status-new-bg);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -95,6 +101,12 @@
   --sidebar-ring: #00afef;
   --status-cancelled: #e04a4a;
   --status-cancelled-bg: #fbe2e2;
+  --status-confirmed: #7cae10;
+  --status-confirmed-bg: #eef6d8;
+  --status-pending: #d98a00;
+  --status-pending-bg: #fdf0d6;
+  --status-new: #38a9e6;
+  --status-new-bg: #e6f5fd;
 }
 
 .dark {
@@ -133,6 +145,12 @@
   --sidebar-ring: oklch(0.556 0 0);
   --status-cancelled: oklch(0.704 0.191 22.216);
   --status-cancelled-bg: oklch(0.269 0 0);
+  --status-confirmed: oklch(0.72 0.17 142);
+  --status-confirmed-bg: oklch(0.269 0 0);
+  --status-pending: oklch(0.75 0.15 70);
+  --status-pending-bg: oklch(0.269 0 0);
+  --status-new: oklch(0.7 0.12 230);
+  --status-new-bg: oklch(0.269 0 0);
 }
 
 @layer base {

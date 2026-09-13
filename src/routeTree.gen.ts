@@ -17,13 +17,17 @@ import { Route as AuthenticatedComboToursIndexRouteImport } from "./routes/_auth
 import { Route as AuthenticatedCustomersIndexRouteImport } from "./routes/_authenticated/customers/index"
 import { Route as AuthenticatedDashboardIndexRouteImport } from "./routes/_authenticated/dashboard/index"
 import { Route as AuthenticatedHolidayPackagesIndexRouteImport } from "./routes/_authenticated/holiday-packages/index"
+import { Route as AuthenticatedHolidayPackagesNewRouteImport } from "./routes/_authenticated/holiday-packages/new"
 import { Route as AuthenticatedInquiriesIndexRouteImport } from "./routes/_authenticated/inquiries/index"
 import { Route as AuthenticatedPaymentsIndexRouteImport } from "./routes/_authenticated/payments/index"
 import { Route as AuthenticatedPromotionsIndexRouteImport } from "./routes/_authenticated/promotions/index"
+import { Route as AuthenticatedPromotionsIdRouteImport } from "./routes/_authenticated/promotions/$id"
+import { Route as AuthenticatedPromotionsNewRouteImport } from "./routes/_authenticated/promotions/new"
 import { Route as AuthenticatedReportsIndexRouteImport } from "./routes/_authenticated/reports/index"
 import { Route as AuthenticatedSettingsIndexRouteImport } from "./routes/_authenticated/settings/index"
 import { Route as AuthenticatedStaffIndexRouteImport } from "./routes/_authenticated/staff/index"
 import { Route as AuthenticatedToursIndexRouteImport } from "./routes/_authenticated/tours/index"
+import { Route as AuthenticatedToursNewRouteImport } from "./routes/_authenticated/tours/new"
 import { Route as AuthenticatedWebsiteIndexRouteImport } from "./routes/_authenticated/website/index"
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -70,6 +74,12 @@ const AuthenticatedHolidayPackagesIndexRoute =
     path: "/holiday-packages/",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedHolidayPackagesNewRoute =
+  AuthenticatedHolidayPackagesNewRouteImport.update({
+    id: "/holiday-packages/new",
+    path: "/holiday-packages/new",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedInquiriesIndexRoute =
   AuthenticatedInquiriesIndexRouteImport.update({
     id: "/inquiries/",
@@ -86,6 +96,18 @@ const AuthenticatedPromotionsIndexRoute =
   AuthenticatedPromotionsIndexRouteImport.update({
     id: "/promotions/",
     path: "/promotions/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPromotionsIdRoute =
+  AuthenticatedPromotionsIdRouteImport.update({
+    id: "/promotions/$id",
+    path: "/promotions/$id",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPromotionsNewRoute =
+  AuthenticatedPromotionsNewRouteImport.update({
+    id: "/promotions/new",
+    path: "/promotions/new",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedReportsIndexRoute =
@@ -110,6 +132,11 @@ const AuthenticatedToursIndexRoute = AuthenticatedToursIndexRouteImport.update({
   path: "/tours/",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedToursNewRoute = AuthenticatedToursNewRouteImport.update({
+  id: "/tours/new",
+  path: "/tours/new",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedWebsiteIndexRoute =
   AuthenticatedWebsiteIndexRouteImport.update({
     id: "/website/",
@@ -120,6 +147,10 @@ const AuthenticatedWebsiteIndexRoute =
 export interface FileRoutesByFullPath {
   "/": typeof AuthenticatedIndexRoute
   "/login": typeof authLoginRoute
+  "/holiday-packages/new": typeof AuthenticatedHolidayPackagesNewRoute
+  "/promotions/$id": typeof AuthenticatedPromotionsIdRoute
+  "/promotions/new": typeof AuthenticatedPromotionsNewRoute
+  "/tours/new": typeof AuthenticatedToursNewRoute
   "/bookings/": typeof AuthenticatedBookingsIndexRoute
   "/combo-tours/": typeof AuthenticatedComboToursIndexRoute
   "/customers/": typeof AuthenticatedCustomersIndexRoute
@@ -137,6 +168,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/login": typeof authLoginRoute
   "/": typeof AuthenticatedIndexRoute
+  "/holiday-packages/new": typeof AuthenticatedHolidayPackagesNewRoute
+  "/promotions/$id": typeof AuthenticatedPromotionsIdRoute
+  "/promotions/new": typeof AuthenticatedPromotionsNewRoute
+  "/tours/new": typeof AuthenticatedToursNewRoute
   "/bookings": typeof AuthenticatedBookingsIndexRoute
   "/combo-tours": typeof AuthenticatedComboToursIndexRoute
   "/customers": typeof AuthenticatedCustomersIndexRoute
@@ -156,6 +191,10 @@ export interface FileRoutesById {
   "/_authenticated": typeof AuthenticatedRouteWithChildren
   "/(auth)/login": typeof authLoginRoute
   "/_authenticated/": typeof AuthenticatedIndexRoute
+  "/_authenticated/holiday-packages/new": typeof AuthenticatedHolidayPackagesNewRoute
+  "/_authenticated/promotions/$id": typeof AuthenticatedPromotionsIdRoute
+  "/_authenticated/promotions/new": typeof AuthenticatedPromotionsNewRoute
+  "/_authenticated/tours/new": typeof AuthenticatedToursNewRoute
   "/_authenticated/bookings/": typeof AuthenticatedBookingsIndexRoute
   "/_authenticated/combo-tours/": typeof AuthenticatedComboToursIndexRoute
   "/_authenticated/customers/": typeof AuthenticatedCustomersIndexRoute
@@ -175,6 +214,10 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/login"
+    | "/holiday-packages/new"
+    | "/promotions/$id"
+    | "/promotions/new"
+    | "/tours/new"
     | "/bookings/"
     | "/combo-tours/"
     | "/customers/"
@@ -192,6 +235,10 @@ export interface FileRouteTypes {
   to:
     | "/login"
     | "/"
+    | "/holiday-packages/new"
+    | "/promotions/$id"
+    | "/promotions/new"
+    | "/tours/new"
     | "/bookings"
     | "/combo-tours"
     | "/customers"
@@ -210,6 +257,10 @@ export interface FileRouteTypes {
     | "/_authenticated"
     | "/(auth)/login"
     | "/_authenticated/"
+    | "/_authenticated/holiday-packages/new"
+    | "/_authenticated/promotions/$id"
+    | "/_authenticated/promotions/new"
+    | "/_authenticated/tours/new"
     | "/_authenticated/bookings/"
     | "/_authenticated/combo-tours/"
     | "/_authenticated/customers/"
@@ -288,6 +339,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedHolidayPackagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/holiday-packages/new": {
+      id: "/_authenticated/holiday-packages/new"
+      path: "/holiday-packages/new"
+      fullPath: "/holiday-packages/new"
+      preLoaderRoute: typeof AuthenticatedHolidayPackagesNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/inquiries/": {
       id: "/_authenticated/inquiries/"
       path: "/inquiries"
@@ -307,6 +365,20 @@ declare module "@tanstack/react-router" {
       path: "/promotions"
       fullPath: "/promotions/"
       preLoaderRoute: typeof AuthenticatedPromotionsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/promotions/$id": {
+      id: "/_authenticated/promotions/$id"
+      path: "/promotions/$id"
+      fullPath: "/promotions/$id"
+      preLoaderRoute: typeof AuthenticatedPromotionsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/promotions/new": {
+      id: "/_authenticated/promotions/new"
+      path: "/promotions/new"
+      fullPath: "/promotions/new"
+      preLoaderRoute: typeof AuthenticatedPromotionsNewRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/reports/": {
@@ -337,6 +409,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedToursIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/tours/new": {
+      id: "/_authenticated/tours/new"
+      path: "/tours/new"
+      fullPath: "/tours/new"
+      preLoaderRoute: typeof AuthenticatedToursNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/website/": {
       id: "/_authenticated/website/"
       path: "/website"
@@ -349,6 +428,10 @@ declare module "@tanstack/react-router" {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedHolidayPackagesNewRoute: typeof AuthenticatedHolidayPackagesNewRoute
+  AuthenticatedPromotionsIdRoute: typeof AuthenticatedPromotionsIdRoute
+  AuthenticatedPromotionsNewRoute: typeof AuthenticatedPromotionsNewRoute
+  AuthenticatedToursNewRoute: typeof AuthenticatedToursNewRoute
   AuthenticatedBookingsIndexRoute: typeof AuthenticatedBookingsIndexRoute
   AuthenticatedComboToursIndexRoute: typeof AuthenticatedComboToursIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
@@ -366,6 +449,10 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedHolidayPackagesNewRoute: AuthenticatedHolidayPackagesNewRoute,
+  AuthenticatedPromotionsIdRoute: AuthenticatedPromotionsIdRoute,
+  AuthenticatedPromotionsNewRoute: AuthenticatedPromotionsNewRoute,
+  AuthenticatedToursNewRoute: AuthenticatedToursNewRoute,
   AuthenticatedBookingsIndexRoute: AuthenticatedBookingsIndexRoute,
   AuthenticatedComboToursIndexRoute: AuthenticatedComboToursIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,

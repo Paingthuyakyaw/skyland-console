@@ -15,15 +15,14 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set) => {
     token,
     refreshToken,
 
-    setAuth: (newToken: string, newRefreshToken = "") =>
-      set(() => {
+    setAuth: (newToken: string, newRefreshToken) =>
+      set((state) => {
+        const nextRefreshToken = newRefreshToken || state.refreshToken
         localStorage.setItem("token", newToken)
-        if (newRefreshToken) {
-          localStorage.setItem("refreshToken", newRefreshToken)
-        } else {
-          localStorage.removeItem("refreshToken")
+        if (nextRefreshToken) {
+          localStorage.setItem("refreshToken", nextRefreshToken)
         }
-        return { token: newToken, refreshToken: newRefreshToken }
+        return { token: newToken, refreshToken: nextRefreshToken }
       }),
 
     removeAuth: () =>

@@ -1,5 +1,6 @@
-import { axios } from "@/api"
-import { useBoundStore } from "@/store/client/use-store"
+import { authAxios } from "@/api/auth-client"
+import { applySession } from "@/store/server/auth/refresh"
+import type { AuthApiResponse, TokenResponse } from "@/store/server/auth/typed"
 import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "@tanstack/react-router"
 import { isAxiosError } from "axios"
@@ -8,19 +9,6 @@ import { toast } from "sonner"
 export interface LoginPayload {
   email: string
   password: string
-}
-
-interface TokenResponse {
-  accessToken: string
-  refreshToken: string
-  tokenType?: string
-  expiresIn?: number
-}
-
-interface ApiResponse<T> {
-  success: boolean
-  message?: string
-  data: T
 }
 
 function apiErrorMessage(err: unknown) {
@@ -47,30 +35,28 @@ function apiErrorMessage(err: unknown) {
 }
 
 const login = async (payload: LoginPayload) => {
-  const { data } = await axios.post<ApiResponse<TokenResponse>>(
+  const { data } = await authAxios.post<AuthApiResponse<TokenResponse>>(
     "auth/login",
-    payload,
-    { skipAuthRedirect: true }
+    payload
   )
   return data
 }
 
 export function useLogin(redirect = "/") {
-  const { setAuth } = useBoundStore()
   const router = useRouter()
 
   return useMutation({
     mutationFn: (payload: LoginPayload) => login(payload),
     onSuccess: (response) => {
-      const accessToken = response.data?.accessToken
-      if (!accessToken) {
+      const tokens = response.data
+      if (!tokens?.accessToken || !tokens.refreshToken) {
         toast.error(
           response.message || "Login response did not include a session token."
         )
         return
       }
 
-      setAuth(accessToken, response.data.refreshToken)
+      applySession(tokens)
       toast.success(response.message || "Login Successful")
       void router.navigate({ href: redirect })
     },
