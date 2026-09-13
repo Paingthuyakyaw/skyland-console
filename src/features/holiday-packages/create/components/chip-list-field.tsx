@@ -1,7 +1,6 @@
 import { Plus, X } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 export function ChipListField({
@@ -14,19 +13,26 @@ export function ChipListField({
   onChange: (items: string[]) => void
 }) {
   const [draft, setDraft] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+  const list = items ?? []
 
   const add = () => {
     const next = draft.trim()
-    if (!next) return
-    onChange([...items, next])
+    if (!next) {
+      inputRef.current?.focus()
+      return
+    }
+
+    onChange([...list, next])
     setDraft("")
+    inputRef.current?.focus()
   }
 
   return (
     <div className="space-y-2">
       <span className="text-sm font-bold text-foreground">{label}</span>
       <div className="space-y-1">
-        {items.map((item, index) => (
+        {list.map((item, index) => (
           <div
             key={`${label}-${index}`}
             className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-1.5 text-sm"
@@ -37,7 +43,7 @@ export function ChipListField({
               className="text-muted-foreground hover:text-destructive"
               aria-label={`Remove ${item}`}
               onClick={() =>
-                onChange(items.filter((_, itemIndex) => itemIndex !== index))
+                onChange(list.filter((_, itemIndex) => itemIndex !== index))
               }
             >
               <X className="size-3.5" />
@@ -47,6 +53,7 @@ export function ChipListField({
       </div>
       <div className="flex gap-2">
         <Input
+          ref={inputRef}
           value={draft}
           placeholder={`Add ${label.toLowerCase()}…`}
           onChange={(event) => setDraft(event.target.value)}
@@ -57,9 +64,14 @@ export function ChipListField({
             }
           }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={add}>
-          <Plus />
-        </Button>
+        <button
+          type="button"
+          aria-label={`Add ${label}`}
+          onClick={add}
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-input bg-background text-foreground transition-colors hover:bg-muted"
+        >
+          <Plus className="size-3.5" />
+        </button>
       </div>
     </div>
   )

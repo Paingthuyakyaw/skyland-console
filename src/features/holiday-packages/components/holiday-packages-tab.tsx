@@ -1,5 +1,6 @@
 import { Search } from "lucide-react"
 
+import { ListPagination } from "@/components/list-pagination"
 import { Input } from "@/components/ui/input"
 import { HolidayPackageCard } from "@/features/holiday-packages/components/holiday-package-card"
 import type { HolidayPackage } from "@/store/server/holiday/typed"
@@ -11,6 +12,12 @@ type HolidayPackagesTabProps = {
   isPending: boolean
   isError: boolean
   deleting: boolean
+  page: number
+  totalPages: number
+  totalElements: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  onEdit: (pkg: HolidayPackage) => void
   onRequestDelete: (pkg: HolidayPackage) => void
 }
 
@@ -21,6 +28,12 @@ export function HolidayPackagesTab({
   isPending,
   isError,
   deleting,
+  page,
+  totalPages,
+  totalElements,
+  pageSize,
+  onPageChange,
+  onEdit,
   onRequestDelete,
 }: HolidayPackagesTabProps) {
   return (
@@ -54,16 +67,26 @@ export function HolidayPackagesTab({
       ) : null}
 
       {!isPending && !isError && packages.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {packages.map((pkg) => (
-            <HolidayPackageCard
-              key={pkg.id}
-              pkg={pkg}
-              deleting={deleting}
-              onRequestDelete={onRequestDelete}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {packages.map((pkg) => (
+              <HolidayPackageCard
+                key={pkg.id}
+                pkg={pkg}
+                deleting={deleting}
+                onEdit={onEdit}
+                onRequestDelete={onRequestDelete}
+              />
+            ))}
+          </div>
+          <ListPagination
+            page={page}
+            size={pageSize}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            onPageChange={onPageChange}
+          />
+        </>
       ) : null}
     </div>
   )

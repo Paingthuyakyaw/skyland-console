@@ -1,5 +1,6 @@
 import { Search } from "lucide-react"
 
+import { ListPagination } from "@/components/list-pagination"
 import { Input } from "@/components/ui/input"
 import { ComboTourCard } from "@/features/combo-tours/components/combo-tour-card"
 import type { ComboTour } from "@/store/server/combo/typed"
@@ -11,6 +12,12 @@ type ComboPackagesTabProps = {
   isPending: boolean
   isError: boolean
   deleting: boolean
+  page: number
+  totalPages: number
+  totalElements: number
+  pageSize: number
+  onPageChange: (page: number) => void
+  onEdit: (tour: ComboTour) => void
   onRequestDelete: (tour: ComboTour) => void
 }
 
@@ -21,6 +28,12 @@ export function ComboPackagesTab({
   isPending,
   isError,
   deleting,
+  page,
+  totalPages,
+  totalElements,
+  pageSize,
+  onPageChange,
+  onEdit,
   onRequestDelete,
 }: ComboPackagesTabProps) {
   return (
@@ -54,16 +67,26 @@ export function ComboPackagesTab({
       ) : null}
 
       {!isPending && !isError && tours.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {tours.map((tour) => (
-            <ComboTourCard
-              key={tour.id}
-              tour={tour}
-              deleting={deleting}
-              onRequestDelete={onRequestDelete}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid items-stretch gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {tours.map((tour) => (
+              <ComboTourCard
+                key={tour.id}
+                tour={tour}
+                deleting={deleting}
+                onEdit={onEdit}
+                onRequestDelete={onRequestDelete}
+              />
+            ))}
+          </div>
+          <ListPagination
+            page={page}
+            size={pageSize}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            onPageChange={onPageChange}
+          />
+        </>
       ) : null}
     </div>
   )

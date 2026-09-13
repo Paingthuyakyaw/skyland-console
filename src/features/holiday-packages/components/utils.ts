@@ -6,7 +6,7 @@ import type {
 export function formatPrice(pkg: HolidayPackage) {
   const currency = pkg.currency || "AED"
   const price = pkg.discountPrice ?? pkg.fromPrice
-  return `From ${currency} ${price}`
+  return `From ${currency} ${Number(price).toLocaleString("en-US")}`
 }
 
 export function statusLabel(status: HolidayPackageStatus) {

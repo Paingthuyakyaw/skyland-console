@@ -11,11 +11,19 @@ import { toast } from "sonner"
 
 export type CreateComboCategoryPayload = {
   name: string
+  slug: string
+  level: "PRIMARY"
+  imageMediaAssetId?: string
 }
 
 export type UpdateComboCategoryPayload = {
   id: string
+  version: number
   name: string
+  slug: string
+  level: "PRIMARY"
+  sortOrder: number
+  imageMediaAssetId?: string
 }
 
 export type DeleteComboCategoryPayload = {
@@ -34,6 +42,7 @@ export const getComboCategories = async () => {
     {
       params: {
         size: 100,
+        level: "PRIMARY",
       },
     }
   )
@@ -73,11 +82,25 @@ export function useCreateComboCategory() {
 
 export const updateComboCategory = async ({
   id,
+  version,
   name,
+  slug,
+  level,
+  sortOrder,
+  imageMediaAssetId,
 }: UpdateComboCategoryPayload) => {
   const { data } = await axios.put<ApiResponse<ComboCategory>>(
     `combo-tour-categories/${id}`,
-    { name }
+    {
+      version,
+      category: {
+        name,
+        slug,
+        level,
+        sortOrder,
+        imageMediaAssetId,
+      },
+    }
   )
   return data
 }

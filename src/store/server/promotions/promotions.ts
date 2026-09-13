@@ -11,7 +11,7 @@ import type {
   PromotionUpdateRequest,
   PromotionsQueryParams,
 } from "@/store/server/promotions/typed"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 export type DeletePromotionPayload = {
@@ -53,6 +53,7 @@ export const usePromotions = (params: PromotionsQueryParams = {}) => {
   return useQuery({
     queryKey: [...PROMOTIONS_KEY, params],
     queryFn: () => getPromotions(params),
+    placeholderData: keepPreviousData,
   })
 }
 

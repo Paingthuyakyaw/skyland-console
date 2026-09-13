@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,35 +15,64 @@ import {
   useHolidayPackages,
 } from "@/store/server/holiday/packages"
 
+const PAGE_SIZE = 6
+
 type PackageToDelete = {
   id: string
   title: string
 }
 
+type HolidayPackagesUi = {
+  categoriesOpen: boolean
+  search: string
+  page: number
+  deleting: PackageToDelete | null
+}
+
 const HolidayPackageFeature = () => {
   const navigate = useNavigate()
-  const [categoriesOpen, setCategoriesOpen] = useState(false)
-  const [search, setSearch] = useState("")
-  const [packageToDelete, setPackageToDelete] =
-    useState<PackageToDelete | null>(null)
-  const debouncedSearch = useDebouncedValue(search, 300)
+  const [ui, setUi] = useState<HolidayPackagesUi>({
+    categoriesOpen: false,
+    search: "",
+    page: 0,
+    deleting: null,
+  })
+  const debouncedSearch = useDebouncedValue(ui.search, 300)
   const deletePackage = useDeleteHolidayPackage()
+
+  useEffect(() => {
+    setUi((current) => ({ ...current, page: 0 }))
+  }, [debouncedSearch])
 
   const { data, isPending, isError } = useHolidayPackages({
     query: debouncedSearch.trim() || undefined,
-    size: 50,
+    page: ui.page,
+    size: PAGE_SIZE,
   })
 
   const packages = data?.content ?? []
+  const totalElements = data?.totalElements ?? packages.length
+  const totalPages =
+    data?.totalPages && data.totalPages > 0
+      ? data.totalPages
+      : packages.length > 0
+        ? Math.max(1, Math.ceil(totalElements / PAGE_SIZE))
+        : 0
+
+  useEffect(() => {
+    if (totalPages > 0 && ui.page > totalPages - 1) {
+      setUi((current) => ({ ...current, page: totalPages - 1 }))
+    }
+  }, [ui.page, totalPages])
 
   const handleConfirmDelete = () => {
-    if (!packageToDelete) return
+    if (!ui.deleting) return
 
     deletePackage.mutate(
-      { id: packageToDelete.id },
+      { id: ui.deleting.id },
       {
         onSuccess: () => {
-          setPackageToDelete(null)
+          setUi((current) => ({ ...current, deleting: null }))
         },
       }
     )
@@ -57,8 +86,10 @@ const HolidayPackageFeature = () => {
         actions={
           <>
             <ManageCategoriesDialog
-              open={categoriesOpen}
-              onOpenChange={setCategoriesOpen}
+              open={ui.categoriesOpen}
+              onOpenChange={(categoriesOpen) =>
+                setUi((current) => ({ ...current, categoriesOpen }))
+              }
             />
             <Button
               type="button"
@@ -84,14 +115,30 @@ const HolidayPackageFeature = () => {
 
         <TabsContent value="packages">
           <HolidayPackagesTab
-            search={search}
-            onSearchChange={setSearch}
+            search={ui.search}
+            onSearchChange={(search) =>
+              setUi((current) => ({ ...current, search }))
+            }
             packages={packages}
             isPending={isPending}
             isError={isError}
             deleting={deletePackage.isPending}
+            page={ui.page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={PAGE_SIZE}
+            onPageChange={(page) => setUi((current) => ({ ...current, page }))}
+            onEdit={(pkg) => {
+              void navigate({
+                to: "/holiday-packages/$id",
+                params: { id: pkg.id },
+              })
+            }}
             onRequestDelete={(pkg) => {
-              setPackageToDelete({ id: pkg.id, title: pkg.title })
+              setUi((current) => ({
+                ...current,
+                deleting: { id: pkg.id, title: pkg.title },
+              }))
             }}
           />
         </TabsContent>
@@ -102,13 +149,13 @@ const HolidayPackageFeature = () => {
       </Tabs>
 
       <DeleteHolidayPackageDialog
-        open={packageToDelete !== null}
+        open={ui.deleting !== null}
         onOpenChange={(open) => {
           if (!open && !deletePackage.isPending) {
-            setPackageToDelete(null)
+            setUi((current) => ({ ...current, deleting: null }))
           }
         }}
-        packageTitle={packageToDelete?.title}
+        packageTitle={ui.deleting?.title}
         deleting={deletePackage.isPending}
         onConfirm={handleConfirmDelete}
       />

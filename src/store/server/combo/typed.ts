@@ -6,8 +6,9 @@ export type ComboCategory = {
   id: string
   name: string
   slug: string
-  level?: string
+  level?: CategoryLevel
   levelLabel?: string
+  imageUrl?: string
   sortOrder?: number
   version?: number
 }
@@ -33,6 +34,110 @@ export type ComboTourBadge = {
   logoUrl?: string
   title: string
   shortInfo?: string
+}
+
+export type ComboTourBadgeRequest = {
+  logoUrl: string
+  title: string
+  shortInfo: string
+}
+
+export type ComboTourItemRequest = {
+  tourId: string
+  quantity: number
+}
+
+export type ComboTourItem = {
+  id?: string
+  tourId: string
+  tourTitle?: string
+  tourSlug?: string
+  quantity: number
+  sortOrder?: number
+}
+
+export type ComboTourImageRequest = {
+  mediaAssetId: string
+  featured: boolean
+}
+
+export type ComboTourImage = {
+  id?: string
+  mediaAssetId: string
+  url?: string
+  originalFilename?: string
+  sortOrder?: number
+  featured?: boolean
+}
+
+export type ComboTourTextItem = {
+  id?: string
+  value: string
+  sortOrder?: number
+}
+
+export type ComboTourCancellationPolicy = {
+  id: string
+  code?: string
+  name: string
+}
+
+export type ComboTourRequest = {
+  title: string
+  slug: string
+  shortDescription: string
+  longDescription: string
+  primaryCategoryId: string
+  comboPrice: number
+  status: ComboTourStatus
+  cancellationPolicyId: string
+  metaTitle?: string
+  metaDescription?: string
+  items: ComboTourItemRequest[]
+  images: ComboTourImageRequest[]
+  inclusions: string[]
+  exclusions: string[]
+  durationMinutes?: number
+  discountPrice?: number
+  isAttraction: boolean
+  isHot: boolean
+  hotelPickupIncluded: boolean
+  badges: ComboTourBadgeRequest[]
+}
+
+export type ComboTourUpdateRequest = {
+  version: number
+  comboTour: ComboTourRequest
+}
+
+export type ComboTourDetail = {
+  id: string
+  title: string
+  slug: string
+  shortDescription?: string
+  longDescription?: string
+  primaryCategory?: ComboTourCategory
+  comboPrice: number
+  currency?: string
+  status: ComboTourStatus
+  discountPrice?: number
+  durationMinutes?: number
+  isAttraction?: boolean
+  isHot?: boolean
+  hotelPickupIncluded?: boolean
+  cancellationPolicy?: ComboTourCancellationPolicy
+  metaTitle?: string
+  metaDescription?: string
+  items?: ComboTourItem[]
+  images?: ComboTourImage[]
+  inclusions?: ComboTourTextItem[]
+  exclusions?: ComboTourTextItem[]
+  version?: number
+  createdAt?: string
+  updatedAt?: string
+  badges?: ComboTourBadge[]
+  rating?: number
+  reviewCount?: number
 }
 
 export type ComboTour = {

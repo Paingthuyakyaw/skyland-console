@@ -64,6 +64,11 @@ export type HolidayPackageCancellationPolicy = {
   name: string
 }
 
+export type HolidayPackageUpdateRequest = {
+  version: number
+  holidayPackage: HolidayPackageRequest
+}
+
 export type HolidayPackageRequest = {
   title: string
   slug: string

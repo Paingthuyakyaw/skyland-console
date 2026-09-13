@@ -1,5 +1,6 @@
 import { Search } from "lucide-react"
 
+import { ListPagination } from "@/components/list-pagination"
 import { Input } from "@/components/ui/input"
 import { TourCard } from "@/features/tours/components/tour-card"
 import type { TourSummary } from "@/store/server/tours/typed"
@@ -11,6 +12,11 @@ type ToursGridProps = {
   isPending: boolean
   isError: boolean
   deleting: boolean
+  page: number
+  totalPages: number
+  totalElements: number
+  pageSize: number
+  onPageChange: (page: number) => void
   onRequestDelete: (tour: TourSummary) => void
 }
 
@@ -21,6 +27,11 @@ export function ToursGrid({
   isPending,
   isError,
   deleting,
+  page,
+  totalPages,
+  totalElements,
+  pageSize,
+  onPageChange,
   onRequestDelete,
 }: ToursGridProps) {
   return (
@@ -54,16 +65,25 @@ export function ToursGrid({
       ) : null}
 
       {!isPending && !isError && tours.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {tours.map((tour) => (
-            <TourCard
-              key={tour.id}
-              tour={tour}
-              deleting={deleting}
-              onRequestDelete={onRequestDelete}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {tours.map((tour) => (
+              <TourCard
+                key={tour.id}
+                tour={tour}
+                deleting={deleting}
+                onRequestDelete={onRequestDelete}
+              />
+            ))}
+          </div>
+          <ListPagination
+            page={page}
+            size={pageSize}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            onPageChange={onPageChange}
+          />
+        </>
       ) : null}
     </div>
   )

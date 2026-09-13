@@ -1,5 +1,6 @@
 import { Pencil, Trash2 } from "lucide-react"
 
+import { ListPagination } from "@/components/list-pagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -24,6 +25,11 @@ type PromotionsTableProps = {
     categories: Map<string, string>
     tours: Map<string, string>
   }
+  page: number
+  totalPages: number
+  totalElements: number
+  pageSize: number
+  onPageChange: (page: number) => void
   onEdit: (promotion: PromotionResponse) => void
   onRequestDelete: (promotion: PromotionResponse) => void
 }
@@ -34,6 +40,11 @@ export function PromotionsTable({
   isError,
   deleting,
   scopeNames,
+  page,
+  totalPages,
+  totalElements,
+  pageSize,
+  onPageChange,
   onEdit,
   onRequestDelete,
 }: PromotionsTableProps) {
@@ -152,6 +163,17 @@ export function PromotionsTable({
         <p className="px-6 py-12 text-center text-sm text-muted-foreground">
           No coupons match these filters.
         </p>
+      ) : null}
+
+      {!isPending && !isError ? (
+        <ListPagination
+          className="border-t border-border px-4 py-3"
+          page={page}
+          size={pageSize}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          onPageChange={onPageChange}
+        />
       ) : null}
     </Card>
   )

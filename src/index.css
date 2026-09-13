@@ -53,6 +53,12 @@
   --color-status-pending-bg: var(--status-pending-bg);
   --color-status-new: var(--status-new);
   --color-status-new-bg: var(--status-new-bg);
+  --color-type-combo: var(--type-combo);
+  --color-type-combo-bg: var(--type-combo-bg);
+  --color-type-package: var(--type-package);
+  --color-type-package-bg: var(--type-package-bg);
+  --color-type-tour: var(--type-tour);
+  --color-type-tour-bg: var(--type-tour-bg);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -107,6 +113,12 @@
   --status-pending-bg: #fdf0d6;
   --status-new: #38a9e6;
   --status-new-bg: #e6f5fd;
+  --type-combo: #8b5cf6;
+  --type-combo-bg: #f0eafe;
+  --type-package: #f0871f;
+  --type-package-bg: #fdeed9;
+  --type-tour: #00afef;
+  --type-tour-bg: #e5f7fe;
 }
 
 .dark {
@@ -151,6 +163,12 @@
   --status-pending-bg: oklch(0.269 0 0);
   --status-new: oklch(0.7 0.12 230);
   --status-new-bg: oklch(0.269 0 0);
+  --type-combo: oklch(0.6 0.2 290);
+  --type-combo-bg: oklch(0.269 0 0);
+  --type-package: oklch(0.75 0.15 55);
+  --type-package-bg: oklch(0.269 0 0);
+  --type-tour: oklch(0.7 0.12 230);
+  --type-tour-bg: oklch(0.269 0 0);
 }
 
 @layer base {

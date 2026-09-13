@@ -12,10 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  nextSortOrder,
-  slugify,
-} from "@/features/tours/components/utils"
+import { nextSortOrder, slugify } from "@/features/tours/components/utils"
 import { cn } from "@/lib/utils"
 import {
   useCreateTourCategory,
@@ -35,14 +32,19 @@ export function ManageCategoriesDialog({
   open,
   onOpenChange,
 }: ManageCategoriesDialogProps) {
-  const [selectedPrimaryId, setSelectedPrimaryId] = useState("")
-  const [primaryName, setPrimaryName] = useState("")
-  const [secondaryName, setSecondaryName] = useState("")
-  const [newPrimaryImage, setNewPrimaryImage] = useState<{
-    id: string
-    url: string
-  } | null>(null)
-  const [uploadTargetId, setUploadTargetId] = useState<string | null>(null)
+  const [ui, setUi] = useState<{
+    selectedPrimaryId: string
+    primaryName: string
+    secondaryName: string
+    newPrimaryImage: { id: string; url: string } | null
+    uploadTargetId: string | null
+  }>({
+    selectedPrimaryId: "",
+    primaryName: "",
+    secondaryName: "",
+    newPrimaryImage: null,
+    uploadTargetId: null,
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const {
     data: primaryCategories = [],
@@ -56,9 +58,9 @@ export function ManageCategoriesDialog({
     data: selectedSecondaries = [],
     isPending: secondariesPending,
     isError: secondariesError,
-  } = useTourCategories(open && selectedPrimaryId.length > 0, {
+  } = useTourCategories(open && ui.selectedPrimaryId.length > 0, {
     level: "SECONDARY",
-    parentId: selectedPrimaryId || undefined,
+    parentId: ui.selectedPrimaryId || undefined,
   })
   const createCategory = useCreateTourCategory()
   const updateCategory = useUpdateTourCategory()
@@ -69,12 +71,15 @@ export function ManageCategoriesDialog({
     if (!open) return
 
     const hasSelected = primaryCategories.some(
-      (category) => category.id === selectedPrimaryId
+      (category) => category.id === ui.selectedPrimaryId
     )
     if (hasSelected) return
 
-    setSelectedPrimaryId(primaryCategories[0]?.id ?? "")
-  }, [open, primaryCategories, selectedPrimaryId])
+    setUi((current) => ({
+      ...current,
+      selectedPrimaryId: primaryCategories[0]?.id ?? "",
+    }))
+  }, [open, primaryCategories, ui.selectedPrimaryId])
 
   const secondaryCountByParentId = useMemo(() => {
     const counts = new Map<string, number>()
@@ -85,18 +90,21 @@ export function ManageCategoriesDialog({
       counts.set(parentId, (counts.get(parentId) ?? 0) + 1)
     }
 
-    if (selectedPrimaryId) {
+    if (ui.selectedPrimaryId) {
       counts.set(
-        selectedPrimaryId,
-        Math.max(counts.get(selectedPrimaryId) ?? 0, selectedSecondaries.length)
+        ui.selectedPrimaryId,
+        Math.max(
+          counts.get(ui.selectedPrimaryId) ?? 0,
+          selectedSecondaries.length
+        )
       )
     }
 
     return counts
-  }, [secondaryCategories, selectedPrimaryId, selectedSecondaries.length])
+  }, [secondaryCategories, ui.selectedPrimaryId, selectedSecondaries.length])
 
-  const trimmedPrimaryName = primaryName.trim()
-  const trimmedSecondaryName = secondaryName.trim()
+  const trimmedPrimaryName = ui.primaryName.trim()
+  const trimmedSecondaryName = ui.secondaryName.trim()
   const isCreating = createCategory.isPending
   const creatingLevel = isCreating ? createCategory.variables?.level : undefined
   const isDeleting = deleteCategory.isPending
@@ -104,7 +112,7 @@ export function ManageCategoriesDialog({
   const canAddPrimary = trimmedPrimaryName.length > 0 && !isCreating
   const canAddSecondary =
     trimmedSecondaryName.length > 0 &&
-    selectedPrimaryId.length > 0 &&
+    ui.selectedPrimaryId.length > 0 &&
     !isCreating
 
   const handleAddPrimary = (event: FormEvent) => {
@@ -119,12 +127,15 @@ export function ManageCategoriesDialog({
         sortOrder: nextSortOrder(
           primaryCategories.map((category) => category.sortOrder)
         ),
-        imageMediaAssetId: newPrimaryImage?.id,
+        imageMediaAssetId: ui.newPrimaryImage?.id,
       },
       {
         onSuccess: () => {
-          setPrimaryName("")
-          setNewPrimaryImage(null)
+          setUi((current) => ({
+            ...current,
+            primaryName: "",
+            newPrimaryImage: null,
+          }))
         },
       }
     )
@@ -139,14 +150,14 @@ export function ManageCategoriesDialog({
         name: trimmedSecondaryName,
         slug: slugify(trimmedSecondaryName),
         level: "SECONDARY",
-        parentId: selectedPrimaryId,
+        parentId: ui.selectedPrimaryId,
         sortOrder: nextSortOrder(
           selectedSecondaries.map((category) => category.sortOrder)
         ),
       },
       {
         onSuccess: () => {
-          setSecondaryName("")
+          setUi((current) => ({ ...current, secondaryName: "" }))
         },
       }
     )
@@ -166,20 +177,23 @@ export function ManageCategoriesDialog({
       level,
       parentId:
         level === "SECONDARY"
-          ? (category.parent?.id ?? selectedPrimaryId)
+          ? (category.parent?.id ?? ui.selectedPrimaryId)
           : undefined,
       sortOrder: category.sortOrder ?? 0,
     })
   }
 
   const openImagePicker = (categoryId?: string) => {
-    setUploadTargetId(categoryId ?? "new")
+    setUi((current) => ({
+      ...current,
+      uploadTargetId: categoryId ?? "new",
+    }))
     fileInputRef.current?.click()
   }
 
   const handleImageSelected = async (files: FileList | null) => {
     const file = files?.[0]
-    const targetId = uploadTargetId
+    const targetId = ui.uploadTargetId
     if (!file || !targetId) return
 
     try {
@@ -191,10 +205,13 @@ export function ManageCategoriesDialog({
       if (!asset?.id) return
 
       if (targetId === "new") {
-        setNewPrimaryImage({
-          id: asset.id,
-          url: asset.url ?? "",
-        })
+        setUi((current) => ({
+          ...current,
+          newPrimaryImage: {
+            id: asset.id,
+            url: asset.url ?? "",
+          },
+        }))
         return
       }
 
@@ -211,7 +228,7 @@ export function ManageCategoriesDialog({
         imageMediaAssetId: asset.id,
       })
     } finally {
-      setUploadTargetId(null)
+      setUi((current) => ({ ...current, uploadTargetId: null }))
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -258,23 +275,35 @@ export function ManageCategoriesDialog({
             onUpdate={handleUpdateName}
             secondaryCountByParentId={secondaryCountByParentId}
             onUploadImage={openImagePicker}
-            uploadingId={isUploading ? uploadTargetId : null}
+            uploadingId={isUploading ? ui.uploadTargetId : null}
           />
-          <form className="mt-2 flex items-center gap-2" onSubmit={handleAddPrimary}>
+          <form
+            className="mt-2 flex items-center gap-2"
+            onSubmit={handleAddPrimary}
+          >
             <CategoryImageButton
-              imageUrl={newPrimaryImage?.url}
+              imageUrl={ui.newPrimaryImage?.url}
               label="Upload primary category image"
               disabled={isUploading}
-              pending={isUploading && uploadTargetId === "new"}
+              pending={isUploading && ui.uploadTargetId === "new"}
               onClick={() => openImagePicker()}
             />
             <Input
               placeholder="Add primary category"
-              value={primaryName}
-              onChange={(event) => setPrimaryName(event.target.value)}
+              value={ui.primaryName}
+              onChange={(event) =>
+                setUi((current) => ({
+                  ...current,
+                  primaryName: event.target.value,
+                }))
+              }
               disabled={isCreating}
             />
-            <Button type="submit" className="h-10 shrink-0" disabled={!canAddPrimary}>
+            <Button
+              type="submit"
+              className="h-10 shrink-0"
+              disabled={!canAddPrimary}
+            >
               {creatingLevel === "PRIMARY" ? "Adding…" : "Add"}
             </Button>
           </form>
@@ -285,12 +314,18 @@ export function ManageCategoriesDialog({
             <Label>Secondary categories</Label>
             <Select
               items={Object.fromEntries(
-                primaryCategories.map((category) => [category.id, category.name])
+                primaryCategories.map((category) => [
+                  category.id,
+                  category.name,
+                ])
               )}
-              value={selectedPrimaryId || null}
+              value={ui.selectedPrimaryId || null}
               onValueChange={(value) => {
                 if (typeof value === "string") {
-                  setSelectedPrimaryId(value)
+                  setUi((current) => ({
+                    ...current,
+                    selectedPrimaryId: value,
+                  }))
                 }
               }}
               disabled={primaryCategories.length === 0}
@@ -318,7 +353,7 @@ export function ManageCategoriesDialog({
             isPending={secondariesPending}
             isError={secondariesError}
             emptyLabel={
-              selectedPrimaryId
+              ui.selectedPrimaryId
                 ? "No secondary categories yet."
                 : "Select a primary category first."
             }
@@ -328,14 +363,26 @@ export function ManageCategoriesDialog({
             onUpdate={handleUpdateName}
             muted="soft"
           />
-          <form className="mt-2 flex items-center gap-2" onSubmit={handleAddSecondary}>
+          <form
+            className="mt-2 flex items-center gap-2"
+            onSubmit={handleAddSecondary}
+          >
             <Input
               placeholder="Add secondary to selected primary"
-              value={secondaryName}
-              onChange={(event) => setSecondaryName(event.target.value)}
-              disabled={isCreating || !selectedPrimaryId}
+              value={ui.secondaryName}
+              onChange={(event) =>
+                setUi((current) => ({
+                  ...current,
+                  secondaryName: event.target.value,
+                }))
+              }
+              disabled={isCreating || !ui.selectedPrimaryId}
             />
-            <Button type="submit" className="h-10 shrink-0" disabled={!canAddSecondary}>
+            <Button
+              type="submit"
+              className="h-10 shrink-0"
+              disabled={!canAddSecondary}
+            >
               {creatingLevel === "SECONDARY" ? "Adding…" : "Add"}
             </Button>
           </form>
@@ -374,21 +421,18 @@ function CategoryRows({
   onUploadImage,
   uploadingId,
 }: CategoryRowsProps) {
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [draftName, setDraftName] = useState("")
+  const [edit, setEdit] = useState<{ id: string; name: string } | null>(null)
 
   const startEdit = (category: TourCategory) => {
-    setEditingId(category.id)
-    setDraftName(category.name)
+    setEdit({ id: category.id, name: category.name })
   }
 
   const cancelEdit = () => {
-    setEditingId(null)
-    setDraftName("")
+    setEdit(null)
   }
 
   const saveEdit = (category: TourCategory) => {
-    const name = draftName.trim()
+    const name = edit?.name.trim() ?? ""
     if (!name || name === category.name) {
       cancelEdit()
       return
@@ -419,7 +463,7 @@ function CategoryRows({
 
       {categories.map((category) => {
         const secondaryCount = secondaryCountByParentId?.get(category.id)
-        const isEditing = editingId === category.id
+        const isEditing = edit?.id === category.id
 
         return (
           <div
@@ -442,8 +486,14 @@ function CategoryRows({
               {isEditing ? (
                 <Input
                   autoFocus
-                  value={draftName}
-                  onChange={(event) => setDraftName(event.target.value)}
+                  value={edit?.name ?? ""}
+                  onChange={(event) =>
+                    setEdit((current) =>
+                      current
+                        ? { ...current, name: event.target.value }
+                        : current
+                    )
+                  }
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault()
@@ -480,7 +530,7 @@ function CategoryRows({
                     className="text-muted-foreground hover:text-primary"
                     aria-label={`Save ${category.name}`}
                     onClick={() => saveEdit(category)}
-                    disabled={saving || !draftName.trim()}
+                    disabled={saving || !edit?.name.trim()}
                   >
                     <Check />
                   </Button>

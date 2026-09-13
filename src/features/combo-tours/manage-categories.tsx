@@ -1,16 +1,19 @@
-import { Check, Pencil, X } from "lucide-react"
-import { useState, type FormEvent } from "react"
+import { Check, ImagePlus, Pencil, X } from "lucide-react"
+import { useRef, useState, type FormEvent } from "react"
 
 import { CustomDialog } from "@/components/custom-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { slugify } from "@/features/tours/components/utils"
+import { cn } from "@/lib/utils"
 import {
   useCreateComboCategory,
   useDeleteComboCategory,
   useComboCategories,
   useUpdateComboCategory,
 } from "@/store/server/combo/categories"
+import { useUploadMediaAsset } from "@/store/server/tours/media"
 
 type ManageCategoriesDialogProps = {
   open: boolean
@@ -25,53 +28,131 @@ export function ManageCategoriesDialog({
   const createCategory = useCreateComboCategory()
   const updateCategory = useUpdateComboCategory()
   const deleteCategory = useDeleteComboCategory()
-  const [name, setName] = useState("")
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editName, setEditName] = useState("")
+  const upload = useUploadMediaAsset()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [ui, setUi] = useState<{
+    name: string
+    editingId: string | null
+    editName: string
+    newImage: { id: string; url: string } | null
+    uploadTargetId: string | null
+  }>({
+    name: "",
+    editingId: null,
+    editName: "",
+    newImage: null,
+    uploadTargetId: null,
+  })
 
-  const trimmedName = name.trim()
+  const trimmedName = ui.name.trim()
   const canAdd = trimmedName.length > 0 && !createCategory.isPending
-  const trimmedEditName = editName.trim()
+  const trimmedEditName = ui.editName.trim()
   const isUpdating = updateCategory.isPending
   const isDeleting = deleteCategory.isPending
+  const isUploading = upload.isPending || isUpdating
   const canSaveEdit =
-    editingId !== null && trimmedEditName.length > 0 && !isUpdating
+    ui.editingId !== null && trimmedEditName.length > 0 && !isUpdating
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
     if (!canAdd) return
 
     createCategory.mutate(
-      { name: trimmedName },
+      {
+        name: trimmedName,
+        slug: slugify(trimmedName),
+        level: "PRIMARY",
+        imageMediaAssetId: newImage?.id,
+      },
       {
         onSuccess: () => {
-          setName("")
+          setUi((current) => ({ ...current, name: "", newImage: null }))
         },
       }
     )
   }
 
   const startEdit = (id: string, currentName: string) => {
-    setEditingId(id)
-    setEditName(currentName)
+    setUi((current) => ({ ...current, editingId: id, editName: currentName }))
   }
 
   const cancelEdit = () => {
-    setEditingId(null)
-    setEditName("")
+    setUi((current) => ({ ...current, editingId: null, editName: "" }))
   }
 
   const saveEdit = () => {
-    if (!canSaveEdit || !editingId) return
+    if (!canSaveEdit || !ui.editingId) return
+
+    const category = categories.find((item) => item.id === ui.editingId)
+    if (!category) return
 
     updateCategory.mutate(
-      { id: editingId, name: trimmedEditName },
+      {
+        id: ui.editingId,
+        version: category.version ?? 0,
+        name: trimmedEditName,
+        slug: slugify(trimmedEditName),
+        level: "PRIMARY",
+        sortOrder: category.sortOrder ?? 0,
+      },
       {
         onSuccess: () => {
           cancelEdit()
         },
       }
     )
+  }
+
+  const openImagePicker = (categoryId?: string) => {
+    setUi((current) => ({
+      ...current,
+      uploadTargetId: categoryId ?? "new",
+    }))
+    fileInputRef.current?.click()
+  }
+
+  const handleImageSelected = async (files: FileList | null) => {
+    const file = files?.[0]
+    const targetId = ui.uploadTargetId
+    if (!file || !targetId) return
+
+    try {
+      const response = await upload.mutateAsync({
+        file,
+        folderPath: "combo-tour-categories",
+      })
+      const asset = response.data
+      if (!asset?.id) return
+
+      if (targetId === "new") {
+        setUi((current) => ({
+          ...current,
+          newImage: {
+            id: asset.id,
+            url: asset.url ?? "",
+          },
+        }))
+        return
+      }
+
+      const category = categories.find((item) => item.id === targetId)
+      if (!category) return
+
+      updateCategory.mutate({
+        id: category.id,
+        version: category.version ?? 0,
+        name: category.name,
+        slug: category.slug || slugify(category.name),
+        level: "PRIMARY",
+        sortOrder: category.sortOrder ?? 0,
+        imageMediaAssetId: asset.id,
+      })
+    } finally {
+      setUi((current) => ({ ...current, uploadTargetId: null }))
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    }
   }
 
   return (
@@ -91,6 +172,15 @@ export function ManageCategoriesDialog({
       description="Combo tours use primary categories only."
       contentClassName="sm:max-w-xl"
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          void handleImageSelected(event.target.files)
+        }}
+      />
       <div className="rounded-lg border border-border p-3">
         <Label>Categories</Label>
         <div className="mt-2 max-h-72 space-y-1.5 overflow-y-auto">
@@ -113,37 +203,51 @@ export function ManageCategoriesDialog({
           ) : null}
 
           {categories.map((category) => {
-            const isEditing = editingId === category.id
+            const isEditing = ui.editingId === category.id
 
             return (
               <div
                 key={category.id}
                 className="flex items-center justify-between gap-2 rounded-lg bg-muted/45 px-3 py-2"
               >
-                {isEditing ? (
-                  <Input
-                    autoFocus
-                    className="h-8"
-                    value={editName}
-                    onChange={(event) => setEditName(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault()
-                        saveEdit()
-                      }
-                      if (event.key === "Escape") {
-                        event.preventDefault()
-                        cancelEdit()
-                      }
-                    }}
-                    disabled={isUpdating}
-                    aria-label={`Edit ${category.name}`}
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <CategoryImageButton
+                    imageUrl={category.imageUrl}
+                    label={`Upload image for ${category.name}`}
+                    disabled={Boolean(isUploading)}
+                    pending={ui.uploadTargetId === category.id && isUploading}
+                    onClick={() => openImagePicker(category.id)}
                   />
-                ) : (
-                  <span className="min-w-0 truncate text-sm font-bold text-foreground">
-                    {category.name}
-                  </span>
-                )}
+                  {isEditing ? (
+                    <Input
+                      autoFocus
+                      className="h-8"
+                      value={ui.editName}
+                      onChange={(event) =>
+                        setUi((current) => ({
+                          ...current,
+                          editName: event.target.value,
+                        }))
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault()
+                          saveEdit()
+                        }
+                        if (event.key === "Escape") {
+                          event.preventDefault()
+                          cancelEdit()
+                        }
+                      }}
+                      disabled={isUpdating}
+                      aria-label={`Edit ${category.name}`}
+                    />
+                  ) : (
+                    <span className="min-w-0 truncate text-sm font-bold text-foreground">
+                      {category.name}
+                    </span>
+                  )}
+                </div>
                 <div className="flex shrink-0 items-center">
                   {isEditing ? (
                     <>
@@ -189,7 +293,9 @@ export function ManageCategoriesDialog({
                         size="icon-sm"
                         className="text-muted-foreground hover:text-destructive"
                         aria-label={`Delete ${category.name}`}
-                        onClick={() => deleteCategory.mutate({ id: category.id })}
+                        onClick={() =>
+                          deleteCategory.mutate({ id: category.id })
+                        }
                         disabled={isDeleting}
                       >
                         <X />
@@ -203,21 +309,64 @@ export function ManageCategoriesDialog({
         </div>
 
         <form className="mt-2 flex items-center gap-2" onSubmit={handleSubmit}>
+          <CategoryImageButton
+            imageUrl={ui.newImage?.url}
+            label="Upload combo category image"
+            disabled={isUploading}
+            pending={isUploading && ui.uploadTargetId === "new"}
+            onClick={() => openImagePicker()}
+          />
           <Input
             placeholder="Add category"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            value={ui.name}
+            onChange={(event) =>
+              setUi((current) => ({ ...current, name: event.target.value }))
+            }
             disabled={createCategory.isPending}
           />
-          <Button
-            type="submit"
-            className="h-10 shrink-0"
-            disabled={!canAdd}
-          >
+          <Button type="submit" className="h-10 shrink-0" disabled={!canAdd}>
             {createCategory.isPending ? "Adding…" : "Add"}
           </Button>
         </form>
       </div>
     </CustomDialog>
+  )
+}
+
+function CategoryImageButton({
+  imageUrl,
+  label,
+  disabled,
+  pending,
+  onClick,
+}: {
+  imageUrl?: string
+  label: string
+  disabled?: boolean
+  pending?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "relative size-10 shrink-0 overflow-hidden rounded-lg border border-dashed border-input bg-card text-muted-foreground hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-50",
+        imageUrl && "border-solid"
+      )}
+    >
+      {imageUrl ? (
+        <img src={imageUrl} alt="" className="size-full object-cover" />
+      ) : (
+        <ImagePlus className="mx-auto size-4" />
+      )}
+      {pending ? (
+        <span className="absolute inset-0 flex items-center justify-center bg-background/70 text-[10px] font-bold">
+          …
+        </span>
+      ) : null}
+    </button>
   )
 }

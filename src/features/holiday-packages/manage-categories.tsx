@@ -21,22 +21,31 @@ export function ManageCategoriesDialog({
   open,
   onOpenChange,
 }: ManageCategoriesDialogProps) {
-  const { data: categories = [], isPending, isError } =
-    useHolidayPackageCategories(open)
+  const {
+    data: categories = [],
+    isPending,
+    isError,
+  } = useHolidayPackageCategories(open)
   const createCategory = useCreateHolidayPackageCategory()
   const updateCategory = useUpdateHolidayPackageCategory()
   const deleteCategory = useDeleteHolidayPackageCategory()
-  const [name, setName] = useState("")
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editName, setEditName] = useState("")
+  const [ui, setUi] = useState<{
+    name: string
+    editingId: string | null
+    editName: string
+  }>({
+    name: "",
+    editingId: null,
+    editName: "",
+  })
 
-  const trimmedName = name.trim()
+  const trimmedName = ui.name.trim()
   const canAdd = trimmedName.length > 0 && !createCategory.isPending
-  const trimmedEditName = editName.trim()
+  const trimmedEditName = ui.editName.trim()
   const isUpdating = updateCategory.isPending
   const isDeleting = deleteCategory.isPending
   const canSaveEdit =
-    editingId !== null && trimmedEditName.length > 0 && !isUpdating
+    ui.editingId !== null && trimmedEditName.length > 0 && !isUpdating
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -46,27 +55,25 @@ export function ManageCategoriesDialog({
       { name: trimmedName },
       {
         onSuccess: () => {
-          setName("")
+          setUi((current) => ({ ...current, name: "" }))
         },
       }
     )
   }
 
   const startEdit = (id: string, currentName: string) => {
-    setEditingId(id)
-    setEditName(currentName)
+    setUi((current) => ({ ...current, editingId: id, editName: currentName }))
   }
 
   const cancelEdit = () => {
-    setEditingId(null)
-    setEditName("")
+    setUi((current) => ({ ...current, editingId: null, editName: "" }))
   }
 
   const saveEdit = () => {
-    if (!canSaveEdit || !editingId) return
+    if (!canSaveEdit || !ui.editingId) return
 
     updateCategory.mutate(
-      { id: editingId, name: trimmedEditName },
+      { id: ui.editingId, name: trimmedEditName },
       {
         onSuccess: () => {
           cancelEdit()
@@ -114,7 +121,7 @@ export function ManageCategoriesDialog({
           ) : null}
 
           {categories.map((category) => {
-            const isEditing = editingId === category.id
+            const isEditing = ui.editingId === category.id
 
             return (
               <div
@@ -125,8 +132,13 @@ export function ManageCategoriesDialog({
                   <Input
                     autoFocus
                     className="h-8"
-                    value={editName}
-                    onChange={(event) => setEditName(event.target.value)}
+                    value={ui.editName}
+                    onChange={(event) =>
+                      setUi((current) => ({
+                        ...current,
+                        editName: event.target.value,
+                      }))
+                    }
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
                         event.preventDefault()
@@ -190,7 +202,9 @@ export function ManageCategoriesDialog({
                         size="icon-sm"
                         className="text-muted-foreground hover:text-destructive"
                         aria-label={`Delete ${category.name}`}
-                        onClick={() => deleteCategory.mutate({ id: category.id })}
+                        onClick={() =>
+                          deleteCategory.mutate({ id: category.id })
+                        }
                         disabled={isDeleting}
                       >
                         <X />
@@ -206,15 +220,13 @@ export function ManageCategoriesDialog({
         <form className="mt-2 flex items-center gap-2" onSubmit={handleSubmit}>
           <Input
             placeholder="Add category"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            value={ui.name}
+            onChange={(event) =>
+              setUi((current) => ({ ...current, name: event.target.value }))
+            }
             disabled={createCategory.isPending}
           />
-          <Button
-            type="submit"
-            className="h-10 shrink-0"
-            disabled={!canAdd}
-          >
+          <Button type="submit" className="h-10 shrink-0" disabled={!canAdd}>
             {createCategory.isPending ? "Adding…" : "Add"}
           </Button>
         </form>

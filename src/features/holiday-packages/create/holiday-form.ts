@@ -1,9 +1,12 @@
 import { slugify } from "@/features/tours/components/utils"
 import type {
+  HolidayPackageBadgeRequest,
+  HolidayPackageDetail,
   HolidayPackageDifficulty,
   HolidayPackageHotelTier,
   HolidayPackageRequest,
   HolidayPackageStatus,
+  HolidayPackageTextItem,
 } from "@/store/server/holiday/typed"
 
 export type GalleryImage = {
@@ -36,6 +39,11 @@ export type HolidayPackageFormState = {
   exclusions: string[]
   whatToBring: string[]
   itinerary: ItineraryDraft[]
+  version: number
+  hotelPickupIncluded: boolean
+  isAttraction: boolean
+  isHot: boolean
+  badges: HolidayPackageBadgeRequest[]
 }
 
 export function createInitialHolidayForm(): HolidayPackageFormState {
@@ -60,6 +68,65 @@ export function createInitialHolidayForm(): HolidayPackageFormState {
     exclusions: [],
     whatToBring: [],
     itinerary: [],
+    version: 0,
+    hotelPickupIncluded: false,
+    isAttraction: false,
+    isHot: false,
+    badges: [],
+  }
+}
+
+function textValues(items?: Array<HolidayPackageTextItem | string>) {
+  return (
+    items?.map((item) =>
+      (typeof item === "string" ? item : item.value).trim()
+    ).filter(Boolean) ?? []
+  )
+}
+
+export function formFromDetail(
+  detail: HolidayPackageDetail
+): HolidayPackageFormState {
+  const images = [...(detail.images ?? [])].sort(
+    (left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0)
+  )
+  const itinerary = [...(detail.itinerary ?? [])].sort(
+    (left, right) => left.dayNumber - right.dayNumber
+  )
+
+  return {
+    title: detail.title,
+    slug: detail.slug,
+    slugTouched: true,
+    shortDescription: detail.shortDescription ?? "",
+    longDescription: detail.longDescription ?? "",
+    categoryId: detail.category?.id ?? "",
+    fromPrice: String(detail.fromPrice ?? ""),
+    status: detail.status,
+    cancellationPolicyId: detail.cancellationPolicy?.id ?? "",
+    images: images.map((image) => ({
+      mediaAssetId: image.mediaAssetId,
+      url: image.url ?? "",
+    })),
+    duration: detail.duration ?? "",
+    minimumAge: String(detail.minimumAge ?? 0),
+    difficulty: detail.difficulty ?? "EASY",
+    languages: textValues(detail.languages).join(", ") || "English",
+    hotelTier: detail.hotelTier ?? "FOUR_STAR",
+    airportTransferIncluded: detail.airportTransferIncluded ?? false,
+    inclusions: textValues(detail.inclusions),
+    exclusions: textValues(detail.exclusions),
+    whatToBring: textValues(detail.whatToBring),
+    itinerary: itinerary.map((day) => ({ description: day.description })),
+    version: detail.version ?? 0,
+    hotelPickupIncluded: detail.hotelPickupIncluded ?? false,
+    isAttraction: detail.isAttraction ?? false,
+    isHot: detail.isHot ?? false,
+    badges: (detail.badges ?? []).map((badge) => ({
+      logoUrl: badge.logoUrl ?? "",
+      title: badge.title,
+      shortInfo: badge.shortInfo ?? "",
+    })),
   }
 }
 
@@ -154,9 +221,9 @@ export function buildHolidayPackageRequest(
     inclusions: cleanList(form.inclusions),
     exclusions: cleanList(form.exclusions),
     whatToBring: cleanList(form.whatToBring),
-    hotelPickupIncluded: false,
-    isAttraction: false,
-    isHot: false,
-    badges: [],
+    hotelPickupIncluded: form.hotelPickupIncluded,
+    isAttraction: form.isAttraction,
+    isHot: form.isHot,
+    badges: form.badges,
   }
 }

@@ -9,7 +9,7 @@ import type {
   TourSummary,
   ToursQueryParams,
 } from "@/store/server/tours/typed"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 export type DeleteTourPayload = {
@@ -46,7 +46,29 @@ export const useTours = (params: ToursQueryParams = {}) => {
   return useQuery({
     queryKey: [...TOURS_KEY, params],
     queryFn: () => getTours(params),
+    placeholderData: keepPreviousData,
   })
+}
+
+export const getTour = async (id: string) => {
+  const { data } = await axios.get<ApiResponse<TourResponse>>(`tours/${id}`)
+  return data.data
+}
+
+export const updateTour = async ({
+  id,
+  version,
+  tour,
+}: {
+  id: string
+  version: number
+  tour: TourRequest
+}) => {
+  const { data } = await axios.put<ApiResponse<TourResponse>>(`tours/${id}`, {
+    version,
+    tour,
+  })
+  return data
 }
 
 export const deleteTour = async ({ id }: DeleteTourPayload) => {

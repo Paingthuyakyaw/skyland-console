@@ -13,12 +13,14 @@ import { cn } from "@/lib/utils"
 
 type ComboTourCardProps = {
   tour: ComboTour
+  onEdit: (tour: ComboTour) => void
   onRequestDelete: (tour: ComboTour) => void
   deleting: boolean
 }
 
 export function ComboTourCard({
   tour,
+  onEdit,
   onRequestDelete,
   deleting,
 }: ComboTourCardProps) {
@@ -28,8 +30,8 @@ export function ComboTourCard({
       .filter((value): value is string => Boolean(value)) ?? []
 
   return (
-    <Card className="group gap-0 overflow-hidden py-0">
-      <div className="relative h-44 bg-muted">
+    <Card className="group h-full gap-0 overflow-hidden py-0">
+      <div className="relative h-44 shrink-0 bg-muted">
         {tour.imageUrl ? (
           <img
             src={tour.imageUrl}
@@ -37,12 +39,12 @@ export function ComboTourCard({
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : null}
-        <div className="absolute left-3 top-3">
+        <div className="absolute top-3 left-3">
           <Badge variant="secondary" className="font-bold">
             Combo
           </Badge>
         </div>
-        <div className="absolute right-3 top-3">
+        <div className="absolute top-3 right-3">
           <Badge
             variant="outline"
             className={cn(
@@ -57,52 +59,58 @@ export function ComboTourCard({
         </div>
       </div>
 
-      <CardContent className="p-4">
-        <h2 className="font-black text-foreground">{tour.title}</h2>
-        {tour.primaryCategory?.name ? (
-          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-            {tour.primaryCategory.name}
-          </p>
-        ) : null}
+      <CardContent className="flex flex-1 flex-col p-4">
+        <h2 className="line-clamp-1 min-h-6 font-black text-foreground">
+          {tour.title}
+        </h2>
+        <p className="mt-1 line-clamp-2 min-h-8 text-xs text-muted-foreground">
+          {tour.primaryCategory?.name || "\u00a0"}
+        </p>
 
-        {tags.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="mt-3 flex justify-between border-t border-border pt-3">
-          <div>
-            <span className="text-xs text-muted-foreground">Bundle price</span>
-            <div className="font-black text-foreground">{formatPrice(tour)}</div>
-          </div>
-          <div className="text-right text-xs text-muted-foreground">
-            <div>{formatDuration(tour.durationMinutes)}</div>
-          </div>
+        <div className="mt-2 flex min-h-5 flex-wrap gap-1">
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
 
-        <div className="mt-3 flex gap-2">
-          <Button type="button" size="sm" variant="outline" className="flex-1">
-            <Pencil className="size-3.5" />
-            Edit
-          </Button>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="outline"
-            aria-label={`Delete ${tour.title}`}
-            disabled={deleting}
-            onClick={() => onRequestDelete(tour)}
-          >
-            <Trash2 />
-          </Button>
+        <div className="mt-auto">
+          <div className="flex items-end justify-between border-t border-border pt-3">
+            <div>
+              <span className="text-xs text-muted-foreground">Bundle price</span>
+              <div className="font-black text-foreground">{formatPrice(tour)}</div>
+            </div>
+            <div className="text-right text-xs text-muted-foreground">
+              {formatDuration(tour.durationMinutes)}
+            </div>
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={() => onEdit(tour)}
+            >
+              <Pencil className="size-3.5" />
+              Edit
+            </Button>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="outline"
+              aria-label={`Delete ${tour.title}`}
+              disabled={deleting}
+              onClick={() => onRequestDelete(tour)}
+            >
+              <Trash2 />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,5 +1,6 @@
-import { useState } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,33 +12,64 @@ import { ManageCategoriesDialog } from "@/features/combo-tours/manage-categories
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useDeleteComboTour, useComboTours } from "@/store/server/combo/tours"
 
+const PAGE_SIZE = 6
+
 type TourToDelete = {
   id: string
   title: string
 }
 
+type ComboToursUi = {
+  categoriesOpen: boolean
+  search: string
+  page: number
+  deleting: TourToDelete | null
+}
+
 const ComboToursFeature = () => {
-  const [categoriesOpen, setCategoriesOpen] = useState(false)
-  const [search, setSearch] = useState("")
-  const [tourToDelete, setTourToDelete] = useState<TourToDelete | null>(null)
-  const debouncedSearch = useDebouncedValue(search, 300)
+  const navigate = useNavigate()
+  const [ui, setUi] = useState<ComboToursUi>({
+    categoriesOpen: false,
+    search: "",
+    page: 0,
+    deleting: null,
+  })
+  const debouncedSearch = useDebouncedValue(ui.search, 300)
   const deleteTour = useDeleteComboTour()
+
+  useEffect(() => {
+    setUi((current) => ({ ...current, page: 0 }))
+  }, [debouncedSearch])
 
   const { data, isPending, isError } = useComboTours({
     query: debouncedSearch.trim() || undefined,
-    size: 50,
+    page: ui.page,
+    size: PAGE_SIZE,
   })
 
   const tours = data?.content ?? []
+  const totalElements = data?.totalElements ?? tours.length
+  const totalPages =
+    data?.totalPages && data.totalPages > 0
+      ? data.totalPages
+      : tours.length > 0
+        ? Math.max(1, Math.ceil(totalElements / PAGE_SIZE))
+        : 0
+
+  useEffect(() => {
+    if (totalPages > 0 && ui.page > totalPages - 1) {
+      setUi((current) => ({ ...current, page: totalPages - 1 }))
+    }
+  }, [ui.page, totalPages])
 
   const handleConfirmDelete = () => {
-    if (!tourToDelete) return
+    if (!ui.deleting) return
 
     deleteTour.mutate(
-      { id: tourToDelete.id },
+      { id: ui.deleting.id },
       {
         onSuccess: () => {
-          setTourToDelete(null)
+          setUi((current) => ({ ...current, deleting: null }))
         },
       }
     )
@@ -51,10 +83,17 @@ const ComboToursFeature = () => {
         actions={
           <>
             <ManageCategoriesDialog
-              open={categoriesOpen}
-              onOpenChange={setCategoriesOpen}
+              open={ui.categoriesOpen}
+              onOpenChange={(categoriesOpen) =>
+                setUi((current) => ({ ...current, categoriesOpen }))
+              }
             />
-            <Button type="button">
+            <Button
+              type="button"
+              onClick={() => {
+                void navigate({ to: "/combo-tours/new" })
+              }}
+            >
               <Plus />
               New combo tour
             </Button>
@@ -73,14 +112,30 @@ const ComboToursFeature = () => {
 
         <TabsContent value="packages">
           <ComboPackagesTab
-            search={search}
-            onSearchChange={setSearch}
+            search={ui.search}
+            onSearchChange={(search) =>
+              setUi((current) => ({ ...current, search }))
+            }
             tours={tours}
             isPending={isPending}
             isError={isError}
             deleting={deleteTour.isPending}
+            page={ui.page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={PAGE_SIZE}
+            onPageChange={(page) => setUi((current) => ({ ...current, page }))}
+            onEdit={(tour) => {
+              void navigate({
+                to: "/combo-tours/$id",
+                params: { id: tour.id },
+              })
+            }}
             onRequestDelete={(tour) => {
-              setTourToDelete({ id: tour.id, title: tour.title })
+              setUi((current) => ({
+                ...current,
+                deleting: { id: tour.id, title: tour.title },
+              }))
             }}
           />
         </TabsContent>
@@ -91,13 +146,13 @@ const ComboToursFeature = () => {
       </Tabs>
 
       <DeleteComboTourDialog
-        open={tourToDelete !== null}
+        open={ui.deleting !== null}
         onOpenChange={(open) => {
           if (!open && !deleteTour.isPending) {
-            setTourToDelete(null)
+            setUi((current) => ({ ...current, deleting: null }))
           }
         }}
-        tourTitle={tourToDelete?.title}
+        tourTitle={ui.deleting?.title}
         deleting={deleteTour.isPending}
         onConfirm={handleConfirmDelete}
       />

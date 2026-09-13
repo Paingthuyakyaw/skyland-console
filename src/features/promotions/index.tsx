@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Plus, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -48,6 +48,8 @@ const SCOPE_FILTER_ITEMS = {
   SPECIFIC_TOUR: "Specific tour",
 } as const
 
+const PAGE_SIZE = 10
+
 type StatusFilter = keyof typeof STATUS_FILTER_ITEMS
 type ScopeFilter = keyof typeof SCOPE_FILTER_ITEMS
 
@@ -70,20 +72,33 @@ function matchesStatusFilter(
 
 const PromotionsFeature = () => {
   const navigate = useNavigate()
-  const [search, setSearch] = useState("")
-  const [status, setStatus] = useState<StatusFilter>("all")
-  const [scope, setScope] = useState<ScopeFilter>("all")
-  const [couponToDelete, setCouponToDelete] = useState<CouponToDelete | null>(
-    null
-  )
-  const debouncedSearch = useDebouncedValue(search, 300)
+  const [ui, setUi] = useState<{
+    search: string
+    status: StatusFilter
+    scope: ScopeFilter
+    page: number
+    deleting: CouponToDelete | null
+  }>({
+    search: "",
+    status: "all",
+    scope: "all",
+    page: 0,
+    deleting: null,
+  })
+  const debouncedSearch = useDebouncedValue(ui.search, 300)
   const deletePromotion = useDeletePromotion()
+
+  useEffect(() => {
+    setUi((current) => ({ ...current, page: 0 }))
+  }, [debouncedSearch, ui.status, ui.scope])
 
   const { data, isPending, isError } = usePromotions({
     query: debouncedSearch.trim() || undefined,
-    status: isApiStatus(status) ? status : undefined,
-    scopeType: scope === "all" ? undefined : (scope as PromotionScopeType),
-    size: 50,
+    status: isApiStatus(ui.status) ? ui.status : undefined,
+    scopeType:
+      ui.scope === "all" ? undefined : (ui.scope as PromotionScopeType),
+    page: ui.page,
+    size: PAGE_SIZE,
   })
 
   const { data: primaryCategories = [] } = useTourCategories(true, {
@@ -107,17 +122,30 @@ const PromotionsFeature = () => {
   }, [primaryCategories, secondaryCategories, toursPage?.content])
 
   const promotions = (data?.content ?? []).filter((promotion) =>
-    matchesStatusFilter(promotion, status)
+    matchesStatusFilter(promotion, ui.status)
   )
+  const totalElements = data?.totalElements ?? promotions.length
+  const totalPages =
+    data?.totalPages && data.totalPages > 0
+      ? data.totalPages
+      : promotions.length > 0
+        ? Math.max(1, Math.ceil(totalElements / PAGE_SIZE))
+        : 0
+
+  useEffect(() => {
+    if (totalPages > 0 && ui.page > totalPages - 1) {
+      setUi((current) => ({ ...current, page: totalPages - 1 }))
+    }
+  }, [ui.page, totalPages])
 
   const handleConfirmDelete = () => {
-    if (!couponToDelete) return
+    if (!ui.deleting) return
 
     deletePromotion.mutate(
-      { id: couponToDelete.id },
+      { id: ui.deleting.id },
       {
         onSuccess: () => {
-          setCouponToDelete(null)
+          setUi((current) => ({ ...current, deleting: null }))
         },
       }
     )
@@ -142,22 +170,27 @@ const PromotionsFeature = () => {
       />
 
       <Card className="mb-4 gap-0 py-4">
-        <div className="grid gap-3 px-4 lg:grid-cols-[minmax(0,1fr)_180px_220px]">
+        <div className="grid gap-3 px-4 md:grid-cols-[minmax(0,1fr)_180px_220px]">
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              value={ui.search}
+              onChange={(event) =>
+                setUi((current) => ({ ...current, search: event.target.value }))
+              }
               placeholder="Search coupon code"
             />
           </div>
           <Select
             items={STATUS_FILTER_ITEMS}
-            value={status}
+            value={ui.status}
             onValueChange={(value) => {
               if (value && value in STATUS_FILTER_ITEMS) {
-                setStatus(value as StatusFilter)
+                setUi((current) => ({
+                  ...current,
+                  status: value as StatusFilter,
+                }))
               }
             }}
           >
@@ -174,10 +207,13 @@ const PromotionsFeature = () => {
           </Select>
           <Select
             items={SCOPE_FILTER_ITEMS}
-            value={scope}
+            value={ui.scope}
             onValueChange={(value) => {
               if (value && value in SCOPE_FILTER_ITEMS) {
-                setScope(value as ScopeFilter)
+                setUi((current) => ({
+                  ...current,
+                  scope: value as ScopeFilter,
+                }))
               }
             }}
           >
@@ -201,6 +237,11 @@ const PromotionsFeature = () => {
         isError={isError}
         deleting={deletePromotion.isPending}
         scopeNames={scopeNames}
+        page={ui.page}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        pageSize={PAGE_SIZE}
+        onPageChange={(page) => setUi((current) => ({ ...current, page }))}
         onEdit={(promotion) => {
           void navigate({
             to: "/promotions/$id",
@@ -208,18 +249,21 @@ const PromotionsFeature = () => {
           })
         }}
         onRequestDelete={(promotion) => {
-          setCouponToDelete({ id: promotion.id, code: promotion.code })
+          setUi((current) => ({
+            ...current,
+            deleting: { id: promotion.id, code: promotion.code },
+          }))
         }}
       />
 
       <DeletePromotionDialog
-        open={couponToDelete !== null}
+        open={ui.deleting !== null}
         onOpenChange={(open) => {
           if (!open && !deletePromotion.isPending) {
-            setCouponToDelete(null)
+            setUi((current) => ({ ...current, deleting: null }))
           }
         }}
-        couponCode={couponToDelete?.code}
+        couponCode={ui.deleting?.code}
         deleting={deletePromotion.isPending}
         onConfirm={handleConfirmDelete}
       />

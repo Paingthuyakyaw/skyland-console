@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { PagePlaceholder } from "@/components/page-placeholder"
@@ -10,11 +10,16 @@ import { TripDetailsTab } from "@/features/holiday-packages/create/tabs/trip-det
 import {
   buildHolidayPackageRequest,
   createInitialHolidayForm,
+  formFromDetail,
   validateHolidayForm,
   type HolidayPackageFormState,
 } from "@/features/holiday-packages/create/holiday-form"
 import { useHolidayPackageCategories } from "@/store/server/holiday/categories"
-import { useCreateHolidayPackage } from "@/store/server/holiday/packages"
+import {
+  useCreateHolidayPackage,
+  useHolidayPackage,
+  useUpdateHolidayPackage,
+} from "@/store/server/holiday/packages"
 import { useCancellationPolicyOptions } from "@/store/server/tours/cancellation-policies"
 
 type CreatePageState = {
@@ -22,16 +27,34 @@ type CreatePageState = {
   activeTab: string
 }
 
-const CreateHolidayPackageFeature = () => {
+type HolidayPackageFormPageProps = {
+  packageId?: string
+}
+
+const HolidayPackageFormPage = ({
+  packageId,
+}: HolidayPackageFormPageProps) => {
   const navigate = useNavigate()
+  const isEdit = Boolean(packageId)
   const [page, setPage] = useState<CreatePageState>(() => ({
     form: createInitialHolidayForm(),
     activeTab: "basic",
   }))
   const { form, activeTab } = page
+  const packageQuery = useHolidayPackage(packageId ?? "", isEdit)
   const createPackage = useCreateHolidayPackage()
+  const updatePackage = useUpdateHolidayPackage()
   const { data: categories = [] } = useHolidayPackageCategories()
   const { data: cancellationPolicies = [] } = useCancellationPolicyOptions()
+  const saving = createPackage.isPending || updatePackage.isPending
+
+  useEffect(() => {
+    if (!packageQuery.data) return
+    setPage({
+      form: formFromDetail(packageQuery.data),
+      activeTab: "basic",
+    })
+  }, [packageQuery.data])
 
   const updateForm = useCallback((nextForm: HolidayPackageFormState) => {
     setPage((current) => ({ ...current, form: nextForm }))
@@ -41,7 +64,7 @@ const CreateHolidayPackageFeature = () => {
     void navigate({ to: "/holiday-packages" })
   }
 
-  const handleCreate = () => {
+  const handleSave = () => {
     const errors = validateHolidayForm(form)
     if (errors.length > 0) {
       toast.error(errors[0].message)
@@ -49,29 +72,64 @@ const CreateHolidayPackageFeature = () => {
       return
     }
 
-    createPackage.mutate(buildHolidayPackageRequest(form), {
+    const payload = buildHolidayPackageRequest(form)
+
+    if (isEdit && packageId) {
+      updatePackage.mutate(
+        {
+          id: packageId,
+          version: form.version,
+          holidayPackage: payload,
+        },
+        {
+          onSuccess: () => {
+            void navigate({ to: "/holiday-packages" })
+          },
+        }
+      )
+      return
+    }
+
+    createPackage.mutate(payload, {
       onSuccess: () => {
         void navigate({ to: "/holiday-packages" })
       },
     })
   }
 
+  if (isEdit && packageQuery.isPending) {
+    return (
+      <p className="py-10 text-center text-sm text-muted-foreground">
+        Loading holiday package…
+      </p>
+    )
+  }
+
+  if (isEdit && packageQuery.isError) {
+    return (
+      <div className="space-y-4 py-10 text-center">
+        <p className="text-sm text-destructive">
+          Failed to load holiday package.
+        </p>
+        <Button type="button" variant="outline" onClick={goBack}>
+          Back to list
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div>
       <PagePlaceholder
-        title="New Holiday Package"
+        title={isEdit ? form.title || "Edit Holiday Package" : "New Holiday Package"}
         subtitle="Inquiry-only holiday offer. Visitors see a starting price and submit a request."
         actions={
           <>
             <Button type="button" variant="outline" onClick={goBack}>
               Cancel
             </Button>
-            <Button
-              type="button"
-              disabled={createPackage.isPending}
-              onClick={handleCreate}
-            >
-              {createPackage.isPending ? "Saving..." : "Save package"}
+            <Button type="button" disabled={saving} onClick={handleSave}>
+              {saving ? "Saving..." : "Save package"}
             </Button>
           </>
         }
@@ -114,4 +172,4 @@ const CreateHolidayPackageFeature = () => {
   )
 }
 
-export default CreateHolidayPackageFeature
+export default HolidayPackageFormPage
