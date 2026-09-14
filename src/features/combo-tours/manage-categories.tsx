@@ -62,7 +62,7 @@ export function ManageCategoriesDialog({
         name: trimmedName,
         slug: slugify(trimmedName),
         level: "PRIMARY",
-        imageMediaAssetId: newImage?.id,
+        imageMediaAssetId: ui.newImage?.id,
       },
       {
         onSuccess: () => {

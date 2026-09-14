@@ -241,7 +241,9 @@ export function buildComboTourRequest(
     })),
     inclusions: cleanList(form.inclusions),
     exclusions: cleanList(form.exclusions),
-    ...(durationMinutes >= 1 ? { durationMinutes } : {}),
+    ...(typeof durationMinutes === "number" && durationMinutes >= 1
+      ? { durationMinutes }
+      : {}),
     ...(discountPrice === "" ? {} : { discountPrice: toNumber(discountPrice) }),
     isAttraction: false,
     isHot: false,

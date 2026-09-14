@@ -32,6 +32,8 @@ import {
 import { useTours } from "@/store/server/tours/tours"
 import type {
   AvailabilityStatus,
+  CalendarDayResponse,
+  CalendarWindowResponse,
   RuleCategory,
   RuleEffectType,
   RuleRequest,
@@ -247,7 +249,7 @@ export function AvailabilityTab({
   const blockDates = useBlockAvailabilityDates(tourId)
 
   const daysByDate = useMemo(() => {
-    const map = new Map<string, (typeof calendar.data)[number]>()
+    const map = new Map<string, CalendarDayResponse>()
     for (const day of calendar.data ?? []) {
       map.set(day.date, day)
     }
@@ -477,7 +479,7 @@ export function AvailabilityTab({
                 if (!day) return <div key={`empty-${index}`} />
                 const key = dateKey(year, month, day)
                 const data = daysByDate.get(key)
-                const status = data?.status ?? "OPEN"
+                const status: AvailabilityStatus = data?.status ?? "OPEN"
                 return (
                   <button
                     key={key}
@@ -586,7 +588,8 @@ export function AvailabilityTab({
               </Button>
             </CardHeader>
             <CardContent className="space-y-2">
-              {(selected.windows ?? []).map((window) => (
+              {(selected.windows ?? []).map(
+                (window: CalendarWindowResponse) => (
                 <div key={window.id} className="rounded-lg border border-border p-3">
                   <div className="flex items-center justify-between">
                     <div>
@@ -614,7 +617,8 @@ export function AvailabilityTab({
                     </span>
                   </div>
                 </div>
-              ))}
+              )
+              )}
               {(selected.windows ?? []).length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   No windows for this date.
