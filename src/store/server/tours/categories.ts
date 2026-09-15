@@ -103,7 +103,12 @@ export const useTourCategories = (
   params: TourCategoriesQueryParams = {}
 ) => {
   return useQuery({
-    queryKey: [...TOUR_CATEGORIES_KEY, params],
+    queryKey: [
+      ...TOUR_CATEGORIES_KEY,
+      params.level ?? null,
+      params.parentId ?? null,
+      params.query ?? null,
+    ],
     queryFn: () => getTourCategories(params),
     enabled,
   })

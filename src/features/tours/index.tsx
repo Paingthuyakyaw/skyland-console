@@ -36,7 +36,7 @@ const ToursFeature = () => {
   const deleteTour = useDeleteTour()
 
   useEffect(() => {
-    setUi((current) => ({ ...current, page: 0 }))
+    setUi((current) => (current.page === 0 ? current : { ...current, page: 0 }))
   }, [debouncedSearch])
 
   const { data, isPending, isError } = useTours({
@@ -55,9 +55,13 @@ const ToursFeature = () => {
         : 0
 
   useEffect(() => {
-    if (totalPages > 0 && ui.page > totalPages - 1) {
-      setUi((current) => ({ ...current, page: totalPages - 1 }))
-    }
+    if (totalPages <= 0) return
+    setUi((current) => {
+      const nextPage = Math.min(current.page, totalPages - 1)
+      return nextPage === current.page
+        ? current
+        : { ...current, page: nextPage }
+    })
   }, [ui.page, totalPages])
 
   const handleConfirmDelete = () => {
@@ -83,7 +87,11 @@ const ToursFeature = () => {
             <ManageCategoriesDialog
               open={ui.categoriesOpen}
               onOpenChange={(categoriesOpen) =>
-                setUi((current) => ({ ...current, categoriesOpen }))
+                setUi((current) =>
+                  current.categoriesOpen === categoriesOpen
+                    ? current
+                    : { ...current, categoriesOpen }
+                )
               }
             />
             <Button
@@ -131,7 +139,11 @@ const ToursFeature = () => {
         open={ui.deleting !== null}
         onOpenChange={(open) => {
           if (!open && !deleteTour.isPending) {
-            setUi((current) => ({ ...current, deleting: null }))
+            setUi((current) =>
+              current.deleting === null
+                ? current
+                : { ...current, deleting: null }
+            )
           }
         }}
         tourTitle={ui.deleting?.title}

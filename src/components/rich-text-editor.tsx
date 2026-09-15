@@ -48,8 +48,10 @@ export function RichTextEditor({
 
   const emit = () => {
     const html = editorRef.current?.innerHTML ?? ""
-    lastEmitted.current = html
-    onChange(html)
+    const next = isEmptyHtml(html) ? "" : html
+    if (next === lastEmitted.current) return
+    lastEmitted.current = next
+    onChange(next)
   }
 
   const apply = (command: (typeof TOOLS)[number]["command"]) => {

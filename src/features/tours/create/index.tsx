@@ -31,7 +31,15 @@ import {
   useTour,
   useUpdateTour,
 } from "@/store/server/tours/tours"
-import type { TourResponse, TourStatus } from "@/store/server/tours/typed"
+import type {
+  CancellationPolicyOption,
+  TourCategory,
+  TourResponse,
+  TourStatus,
+} from "@/store/server/tours/typed"
+
+const EMPTY_CATEGORIES: TourCategory[] = []
+const EMPTY_POLICIES: CancellationPolicyOption[] = []
 
 type CreatePageState = {
   form: TourFormState
@@ -78,17 +86,20 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
   const tourQuery = useTour(tourId ?? "", isEdit)
   const createTour = useCreateTour()
   const updateTour = useUpdateTour()
-  const { data: primaryCategories = [] } = useTourCategories(true, {
+  const { data: primaryData } = useTourCategories(true, {
     level: "PRIMARY",
   })
-  const { data: secondaryCategories = [] } = useTourCategories(
+  const { data: secondaryData } = useTourCategories(
     Boolean(form.primaryCategoryId),
     {
       level: "SECONDARY",
       parentId: form.primaryCategoryId || undefined,
     }
   )
-  const { data: cancellationPolicies = [] } = useCancellationPolicyOptions()
+  const { data: policyData } = useCancellationPolicyOptions()
+  const primaryCategories = primaryData ?? EMPTY_CATEGORIES
+  const secondaryCategories = secondaryData ?? EMPTY_CATEGORIES
+  const cancellationPolicies = policyData ?? EMPTY_POLICIES
   const savedTour = createdTour
   const tourCreated = Boolean(savedTour)
   const saving = createTour.isPending || updateTour.isPending
@@ -114,7 +125,9 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
   }, [tourQuery.data])
 
   const updateForm = useCallback((nextForm: TourFormState) => {
-    setPage((current) => ({ ...current, form: nextForm }))
+    setPage((current) =>
+      current.form === nextForm ? current : { ...current, form: nextForm }
+    )
   }, [])
 
   const goBack = () => {
@@ -123,7 +136,9 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
 
   const openTab = (tab: string) => {
     if (POST_CREATE_TABS.has(tab) && !savedTour) return
-    setPage((current) => ({ ...current, activeTab: tab }))
+    setPage((current) =>
+      current.activeTab === tab ? current : { ...current, activeTab: tab }
+    )
   }
 
   const applySavedTour = (
@@ -274,6 +289,7 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
         value={activeTab}
         onValueChange={(value) => {
           if (typeof value !== "string") return
+          if (value === activeTab) return
           openTab(value)
         }}
         className="gap-4"

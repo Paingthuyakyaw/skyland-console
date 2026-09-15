@@ -23,6 +23,8 @@ import {
 import { useUploadMediaAsset } from "@/store/server/tours/media"
 import type { TourCategory } from "@/store/server/tours/typed"
 
+const EMPTY_CATEGORIES: TourCategory[] = []
+
 type ManageCategoriesDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -47,21 +49,24 @@ export function ManageCategoriesDialog({
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const {
-    data: primaryCategories = [],
+    data: primaryData,
     isPending: primariesPending,
     isError: primariesError,
   } = useTourCategories(open, { level: "PRIMARY" })
-  const { data: secondaryCategories = [] } = useTourCategories(open, {
+  const { data: secondaryData } = useTourCategories(open, {
     level: "SECONDARY",
   })
   const {
-    data: selectedSecondaries = [],
+    data: selectedSecondaryData,
     isPending: secondariesPending,
     isError: secondariesError,
   } = useTourCategories(open && ui.selectedPrimaryId.length > 0, {
     level: "SECONDARY",
     parentId: ui.selectedPrimaryId || undefined,
   })
+  const primaryCategories = primaryData ?? EMPTY_CATEGORIES
+  const secondaryCategories = secondaryData ?? EMPTY_CATEGORIES
+  const selectedSecondaries = selectedSecondaryData ?? EMPTY_CATEGORIES
   const createCategory = useCreateTourCategory()
   const updateCategory = useUpdateTourCategory()
   const deleteCategory = useDeleteTourCategory()
@@ -70,16 +75,17 @@ export function ManageCategoriesDialog({
   useEffect(() => {
     if (!open) return
 
-    const hasSelected = primaryCategories.some(
-      (category) => category.id === ui.selectedPrimaryId
-    )
-    if (hasSelected) return
+    setUi((current) => {
+      const hasSelected = primaryCategories.some(
+        (category) => category.id === current.selectedPrimaryId
+      )
+      if (hasSelected) return current
 
-    setUi((current) => ({
-      ...current,
-      selectedPrimaryId: primaryCategories[0]?.id ?? "",
-    }))
-  }, [open, primaryCategories, ui.selectedPrimaryId])
+      const nextId = primaryCategories[0]?.id ?? ""
+      if (current.selectedPrimaryId === nextId) return current
+      return { ...current, selectedPrimaryId: nextId }
+    })
+  }, [open, primaryCategories])
 
   const secondaryCountByParentId = useMemo(() => {
     const counts = new Map<string, number>()
@@ -321,12 +327,12 @@ export function ManageCategoriesDialog({
               )}
               value={ui.selectedPrimaryId || null}
               onValueChange={(value) => {
-                if (typeof value === "string") {
-                  setUi((current) => ({
-                    ...current,
-                    selectedPrimaryId: value,
-                  }))
-                }
+                if (typeof value !== "string") return
+                setUi((current) =>
+                  current.selectedPrimaryId === value
+                    ? current
+                    : { ...current, selectedPrimaryId: value }
+                )
               }}
               disabled={primaryCategories.length === 0}
             >

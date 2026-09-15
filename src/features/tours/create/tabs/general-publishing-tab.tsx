@@ -1,3 +1,5 @@
+import { useMemo } from "react"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -39,14 +41,26 @@ export function GeneralPublishingTab({
   secondaryCategories: TourCategory[]
   cancellationPolicies: CancellationPolicyOption[]
 }) {
-  const primaryItems = Object.fromEntries(
-    primaryCategories.map((category) => [category.id, category.name])
+  const primaryItems = useMemo(
+    () =>
+      Object.fromEntries(
+        primaryCategories.map((category) => [category.id, category.name])
+      ),
+    [primaryCategories]
   )
-  const secondaryItems = Object.fromEntries(
-    secondaryCategories.map((category) => [category.id, category.name])
+  const secondaryItems = useMemo(
+    () =>
+      Object.fromEntries(
+        secondaryCategories.map((category) => [category.id, category.name])
+      ),
+    [secondaryCategories]
   )
-  const policyItems = Object.fromEntries(
-    cancellationPolicies.map((policy) => [policy.id, policy.name])
+  const policyItems = useMemo(
+    () =>
+      Object.fromEntries(
+        cancellationPolicies.map((policy) => [policy.id, policy.name])
+      ),
+    [cancellationPolicies]
   )
 
   return (
@@ -114,13 +128,13 @@ export function GeneralPublishingTab({
                   items={primaryItems}
                   value={form.primaryCategoryId || null}
                   onValueChange={(value) => {
-                    if (typeof value === "string") {
-                      onChange({
-                        ...form,
-                        primaryCategoryId: value,
-                        secondaryCategoryId: "",
-                      })
-                    }
+                    if (typeof value !== "string") return
+                    if (value === form.primaryCategoryId) return
+                    onChange({
+                      ...form,
+                      primaryCategoryId: value,
+                      secondaryCategoryId: "",
+                    })
                   }}
                 >
                   <SelectTrigger className="h-10 w-full">
@@ -141,9 +155,9 @@ export function GeneralPublishingTab({
                   items={secondaryItems}
                   value={form.secondaryCategoryId || null}
                   onValueChange={(value) => {
-                    if (typeof value === "string") {
-                      onChange({ ...form, secondaryCategoryId: value })
-                    }
+                    if (typeof value !== "string") return
+                    if (value === form.secondaryCategoryId) return
+                    onChange({ ...form, secondaryCategoryId: value })
                   }}
                 >
                   <SelectTrigger
@@ -255,9 +269,9 @@ export function GeneralPublishingTab({
               items={policyItems}
               value={form.cancellationPolicyId || null}
               onValueChange={(value) => {
-                if (typeof value === "string") {
-                  onChange({ ...form, cancellationPolicyId: value })
-                }
+                if (typeof value !== "string") return
+                if (value === form.cancellationPolicyId) return
+                onChange({ ...form, cancellationPolicyId: value })
               }}
             >
               <SelectTrigger className="h-10 w-full">
@@ -284,12 +298,14 @@ export function GeneralPublishingTab({
               value={form.status}
               onValueChange={(value) => {
                 if (
-                  value === "DRAFT" ||
-                  value === "PUBLISHED" ||
-                  value === "SCHEDULED"
+                  value !== "DRAFT" &&
+                  value !== "PUBLISHED" &&
+                  value !== "SCHEDULED"
                 ) {
-                  onChange({ ...form, status: value })
+                  return
                 }
+                if (value === form.status) return
+                onChange({ ...form, status: value })
               }}
             >
               <SelectTrigger className="h-10 w-full">
