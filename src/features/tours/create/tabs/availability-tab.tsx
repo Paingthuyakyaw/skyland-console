@@ -1,4 +1,18 @@
-import { Ban, CalendarDays, ChevronLeft, ChevronRight, Copy, History, LayoutGrid, Pencil, Plus, RefreshCw, X } from "lucide-react"
+import {
+  Ban,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Copy,
+  History,
+  LayoutGrid,
+  Pencil,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { CustomDialog } from "@/components/custom-dialog"
@@ -24,9 +38,11 @@ import {
   useAvailabilityRules,
   useBlockAvailabilityDates,
   useBulkUpdateAvailability,
+  useChangeImpact,
   useCopyAvailabilityMonth,
   useCreateAvailabilityRule,
   useDeleteAvailabilityRule,
+  useReorderAvailabilityRules,
   useUpdateAvailabilityRule,
 } from "@/store/server/tours/availability"
 import { useTours } from "@/store/server/tours/tours"
@@ -160,6 +176,7 @@ type AvailabilityUi = {
     dayMax: string
     caps: Record<string, string>
     prices: Record<string, string>
+    blocked: boolean
   }
   block: { from: string; to: string }
   copy: { target: string; overwrite: boolean }
@@ -187,6 +204,7 @@ function createAvailabilityUi(): AvailabilityUi {
       dayMax: "60",
       caps: {},
       prices: {},
+      blocked: false,
     },
     block: {
       from: dateKey(year, month, 1),
@@ -230,6 +248,7 @@ export function AvailabilityTab({
   const calendar = useAvailabilityCalendar(tourId, currentMonth)
   const dayDetail = useAvailabilityDay(tourId, selectedDate)
   const rulesQuery = useAvailabilityRules(tourId)
+  const impact = useChangeImpact(tourId)
   const audit = useAuditLogs({
     entityType: "TOUR",
     entityId: tourId,
@@ -243,6 +262,7 @@ export function AvailabilityTab({
   const createRule = useCreateAvailabilityRule(tourId)
   const updateRule = useUpdateAvailabilityRule(tourId)
   const deleteRule = useDeleteAvailabilityRule(tourId)
+  const reorderRules = useReorderAvailabilityRules(tourId)
   const bulkUpdate = useBulkUpdateAvailability(tourId)
   const copyMonth = useCopyAvailabilityMonth(tourId)
   const applyToTours = useApplyAvailabilityToOtherTours(tourId)
@@ -317,6 +337,7 @@ export function AvailabilityTab({
             timeslotId: slot.id,
             maxCapacity: Number(bulk.caps[slot.id]) || undefined,
             price: Number(bulk.prices[slot.id]) || undefined,
+            blocked: bulk.blocked || undefined,
           })),
         },
       },
@@ -384,6 +405,20 @@ export function AvailabilityTab({
       editingRule: rule,
       ruleForm: ruleToRequest(rule),
     }))
+  }
+
+  const handleReorderRule = (ruleId: string, direction: -1 | 1) => {
+    const rules = rulesQuery.data ?? []
+    const index = rules.findIndex((rule) => rule.id === ruleId)
+    const nextIndex = index + direction
+    if (index < 0 || nextIndex < 0 || nextIndex >= rules.length) return
+    const next = [...rules]
+    const [moved] = next.splice(index, 1)
+    next.splice(nextIndex, 0, moved)
+    reorderRules.mutate({
+      tourId,
+      ruleIds: next.map((rule) => rule.id),
+    })
   }
 
   const handleSaveRule = () => {
@@ -528,7 +563,7 @@ export function AvailabilityTab({
             </Button>
           </CardHeader>
           <CardContent className="space-y-2">
-            {(rulesQuery.data ?? []).map((rule) => (
+            {(rulesQuery.data ?? []).map((rule, index) => (
               <div
                 key={rule.id}
                 className="flex items-center gap-3 rounded-lg border border-border px-4 py-3"
@@ -541,6 +576,29 @@ export function AvailabilityTab({
                   </div>
                 </div>
                 <Badge variant="secondary">{rule.category}</Badge>
+                <div className="flex flex-col">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-xs"
+                    disabled={index === 0 || reorderRules.isPending}
+                    onClick={() => handleReorderRule(rule.id, -1)}
+                  >
+                    <ChevronUp />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-xs"
+                    disabled={
+                      index === (rulesQuery.data ?? []).length - 1 ||
+                      reorderRules.isPending
+                    }
+                    onClick={() => handleReorderRule(rule.id, 1)}
+                  >
+                    <ChevronDown />
+                  </Button>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -588,6 +646,37 @@ export function AvailabilityTab({
               </Button>
             </CardHeader>
             <CardContent className="space-y-2">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg bg-muted/40 px-2 py-2">
+                  <div className="text-lg font-black">
+                    {selected.confirmedQuantity ?? selected.bookedCount ?? 0}
+                  </div>
+                  <div className="text-[10px] font-bold text-muted-foreground">
+                    Confirmed
+                  </div>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-2 py-2">
+                  <div className="text-lg font-black">
+                    {selected.heldQuantity ?? 0}
+                  </div>
+                  <div className="text-[10px] font-bold text-muted-foreground">
+                    Held
+                  </div>
+                </div>
+                <div className="rounded-lg bg-muted/40 px-2 py-2">
+                  <div className="text-lg font-black">
+                    {selected.reservedQuantity ?? 0}
+                  </div>
+                  <div className="text-[10px] font-bold text-muted-foreground">
+                    Reserved
+                  </div>
+                </div>
+              </div>
+              {selected.unavailabilityReason ? (
+                <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                  {selected.unavailabilityReason}
+                </p>
+              ) : null}
               {(selected.windows ?? []).map(
                 (window: CalendarWindowResponse) => (
                 <div key={window.id} className="rounded-lg border border-border p-3">
@@ -610,12 +699,22 @@ export function AvailabilityTab({
                       </span>
                     </span>
                     <span>
-                      Price{" "}
+                      Remaining{" "}
                       <span className="font-bold text-foreground">
-                        AED {window.price ?? "—"}
+                        {window.remainingCapacity ?? "—"}
                       </span>
                     </span>
                   </div>
+                  <div className="mt-1 flex justify-between text-[11px] text-muted-foreground">
+                    <span>Confirmed {window.confirmedQuantity ?? 0}</span>
+                    <span>Held {window.heldQuantity ?? 0}</span>
+                    <span>Reserved {window.reservedQuantity ?? 0}</span>
+                  </div>
+                  {window.unavailabilityReason ? (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {window.unavailabilityReason}
+                    </p>
+                  ) : null}
                 </div>
               )
               )}
@@ -639,6 +738,55 @@ export function AvailabilityTab({
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Change impact</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Live holds and future bookings that would be affected by availability
+              changes.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg border border-border px-2 py-2.5">
+                <div className="text-xl font-black text-amber-700">
+                  {impact.data?.activeHolds ?? 0}
+                </div>
+                <div className="text-[10px] font-bold text-muted-foreground">
+                  Active holds
+                </div>
+              </div>
+              <div className="rounded-lg border border-border px-2 py-2.5">
+                <div className="text-xl font-black">
+                  {impact.data?.pendingPaymentBookings ?? 0}
+                </div>
+                <div className="text-[10px] font-bold text-muted-foreground">
+                  Pending
+                </div>
+              </div>
+              <div className="rounded-lg border border-border px-2 py-2.5">
+                <div className="text-xl font-black text-emerald-700">
+                  {impact.data?.confirmedBookings ?? 0}
+                </div>
+                <div className="text-[10px] font-bold text-muted-foreground">
+                  Confirmed
+                </div>
+              </div>
+            </div>
+            {impact.data?.requiredOperationalAction ? (
+              <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+                {impact.data.requiredOperationalAction}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {impact.isPending
+                  ? "Checking impact…"
+                  : "No operational action required."}
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
@@ -815,6 +963,23 @@ export function AvailabilityTab({
               }
             />
           </Field>
+          <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+            <div>
+              <div className="text-sm font-bold">Block these dates</div>
+              <div className="text-xs text-muted-foreground">
+                Sends blocked=true on each timeslot window.
+              </div>
+            </div>
+            <Switch
+              checked={bulk.blocked}
+              onCheckedChange={(blocked) =>
+                setUi((current) => ({
+                  ...current,
+                  bulk: { ...current.bulk, blocked },
+                }))
+              }
+            />
+          </div>
           {timeslots.map((slot: TimeslotResponse) => (
             <div
               key={slot.id}

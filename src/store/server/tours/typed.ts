@@ -201,14 +201,44 @@ export type ImageResponse = ImageRequest & {
   sortOrder?: number
 }
 
+export type AddonStatus = "ACTIVE" | "RETIRED"
+
+export type AddonPricingBasis = "PER_GUEST" | "PER_BOOKING" | "PER_UNIT"
+
 export type AddonRequest = {
+  id?: string
+  code?: string
   name: string
   desc: string
-  pricePerPerson: number
-  maxCap: number
+  unitAmount: number
+  status: AddonStatus
+  pricingBasis: AddonPricingBasis
+  currency: string
+  minQuantity: number
+  maxQuantity: number
+  maxCap?: number
+  pricePerPerson?: number
 }
 
-export type AddonResponse = AddonRequest
+export type AddonResponse = {
+  id?: string
+  addonId?: string
+  code?: string
+  name?: string
+  title?: string
+  desc?: string
+  description?: string
+  unitAmount?: number
+  status?: AddonStatus
+  pricingBasis?: AddonPricingBasis
+  currency?: string
+  minQuantity?: number
+  maxQuantity?: number
+  maxCap?: number
+  pricePerPerson?: number
+  quantity?: number
+  subtotal?: number
+}
 
 export type BadgeRequest = {
   logoUrl: string
@@ -323,6 +353,10 @@ export type CalendarWindowResponse = {
   bookedCount?: number
   remainingCapacity?: number
   price?: number
+  confirmedQuantity?: number
+  heldQuantity?: number
+  reservedQuantity?: number
+  unavailabilityReason?: string
 }
 
 export type CalendarDayResponse = {
@@ -332,6 +366,18 @@ export type CalendarDayResponse = {
   bookedCount?: number
   remainingCapacity?: number
   windows?: CalendarWindowResponse[]
+  confirmedQuantity?: number
+  heldQuantity?: number
+  reservedQuantity?: number
+  unavailabilityReason?: string
+}
+
+export type ChangeImpactResponse = {
+  fromDate?: string
+  activeHolds?: number
+  pendingPaymentBookings?: number
+  confirmedBookings?: number
+  requiredOperationalAction?: string
 }
 
 export type DateSelection = {

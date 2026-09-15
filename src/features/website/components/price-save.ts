@@ -6,6 +6,7 @@ import {
   buildHolidayPackageRequest,
   formFromDetail as holidayFormFromDetail,
 } from "@/features/holiday-packages/create/holiday-form"
+import { buildAddonRequest } from "@/features/tours/create/tour-form"
 import { queryClient } from "@/lib/query-client"
 import { getComboTour, updateComboTour } from "@/store/server/combo/tours"
 import {
@@ -113,7 +114,9 @@ function tourToRequest(
   if (typeof discountPrice === "number") {
     request.discountPrice = discountPrice
   }
-  if (detail.addons?.length) request.addons = detail.addons
+  if (detail.addons?.length) {
+    request.addons = detail.addons.map((addon) => buildAddonRequest(addon))
+  }
   if (request.languagesOffered.length === 0) {
     request.languagesOffered = ["English"]
   }

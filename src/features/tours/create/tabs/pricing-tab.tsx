@@ -2,7 +2,13 @@ import { useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { CustomDialog } from "@/components/custom-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -13,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { TourFormState } from "@/features/tours/create/tour-form"
 import {
   useCreatePricingRule,
   usePricingRules,
@@ -35,15 +40,7 @@ const ADJUSTMENT_ITEMS = {
   FIXED_OVERRIDE: "Fixed override",
 } satisfies Record<PricingAdjustmentType, string>
 
-export function PricingTab({
-  form,
-  onChange,
-  packageId,
-}: {
-  form: TourFormState
-  onChange: (form: TourFormState) => void
-  packageId?: string
-}) {
+export function PricingTab({ packageId }: { packageId?: string }) {
   const { data: rules = [], isPending } = usePricingRules(packageId)
   const createRule = useCreatePricingRule(packageId)
   const [ruleDraft, setRuleDraft] = useState({
@@ -98,7 +95,7 @@ export function PricingTab({
     <div className="space-y-4">
       <Card>
         <CardContent className="pt-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
             Precedence
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -107,117 +104,13 @@ export function PricingTab({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <Badge variant="secondary">Base</Badge>
-            <CardTitle>Per-tour Price</CardTitle>
-            <CardDescription>Standard adult price in AED.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Field>
-              <FieldLabel>Adult (AED)</FieldLabel>
-              <Input
-                type="number"
-                min={0}
-                value={form.adultPrice}
-                onChange={(event) =>
-                  onChange({ ...form, adultPrice: event.target.value })
-                }
-              />
-            </Field>
-            <div className="rounded-lg bg-muted/40 px-3 py-2">
-              <div className="text-[11px] text-muted-foreground">
-                Live customer price
-              </div>
-              <div className="text-lg font-black">
-                AED {form.adultPrice || "—"}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <Badge variant="outline">Traveller Type</Badge>
-            <CardTitle>Pax Tiers</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(
-              [
-                ["Child", "childPrice", form.childPrice],
-                ["Infant", "infantPrice", form.infantPrice],
-                ["Senior", "seniorPrice", form.seniorPrice],
-              ] as const
-            ).map(([label, key, value]) => (
-              <div key={key} className="flex items-center gap-2">
-                <span className="w-14 text-xs font-bold text-muted-foreground">
-                  {label}
-                </span>
-                <Input
-                  type="number"
-                  min={0}
-                  value={value}
-                  onChange={(event) =>
-                    onChange({ ...form, [key]: event.target.value })
-                  }
-                />
-                <span className="text-xs text-muted-foreground">AED</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <Badge variant="secondary">Volume</Badge>
-            <CardTitle>Group Tiers</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(
-              [
-                ["4+", "groupPrice4", form.groupPrice4],
-                ["10+", "groupPrice10", form.groupPrice10],
-                ["20+", "groupPrice20", form.groupPrice20],
-              ] as const
-            ).map(([label, key, value]) => (
-              <div key={key} className="flex items-center gap-2">
-                <span className="w-10 text-xs font-bold text-muted-foreground">
-                  {label}
-                </span>
-                <Input
-                  type="number"
-                  min={0}
-                  value={value}
-                  onChange={(event) =>
-                    onChange({ ...form, [key]: event.target.value })
-                  }
-                />
-                <span className="text-xs text-muted-foreground">AED</span>
-              </div>
-            ))}
-            <Field>
-              <FieldLabel>Private tour (flat rate)</FieldLabel>
-              <Input
-                type="number"
-                min={0}
-                value={form.privateTourPrice}
-                onChange={(event) =>
-                  onChange({ ...form, privateTourPrice: event.target.value })
-                }
-              />
-            </Field>
-          </CardContent>
-        </Card>
-      </div>
-
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Seasonal & date-specific pricing</CardTitle>
             <CardDescription>
               {packageId
-                ? "Rules apply after the tour is created."
+                ? "Rules apply to this timeslot package."
                 : "Save the tour first to add seasonal pricing rules."}
             </CardDescription>
           </div>
@@ -225,7 +118,9 @@ export function PricingTab({
             type="button"
             size="sm"
             disabled={!packageId}
-            onClick={() => setRuleDraft((current) => ({ ...current, open: true }))}
+            onClick={() =>
+              setRuleDraft((current) => ({ ...current, open: true }))
+            }
           >
             Add rule
           </Button>
@@ -249,7 +144,8 @@ export function PricingTab({
                   <div>
                     <div className="text-sm font-bold">{rule.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {rule.ruleType} · {rule.adjustmentType} {rule.adjustmentValue}
+                      {rule.ruleType} · {rule.adjustmentType}{" "}
+                      {rule.adjustmentValue}
                     </div>
                   </div>
                   <Badge variant={rule.active ? "default" : "secondary"}>

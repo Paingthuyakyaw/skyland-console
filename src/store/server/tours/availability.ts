@@ -9,6 +9,7 @@ import type {
   BulkAvailabilityRequest,
   BulkAvailabilityResponse,
   CalendarDayResponse,
+  ChangeImpactResponse,
   CopyMonthRequest,
   PageResponse,
   RuleRequest,
@@ -156,6 +157,48 @@ export function useDeleteAvailabilityRule(tourId?: string) {
   })
 }
 
+export const reorderAvailabilityRules = async ({
+  tourId,
+  ruleIds,
+}: {
+  tourId: string
+  ruleIds: string[]
+}) => {
+  const { data } = await axios.post<ApiResponse<unknown>>(
+    `tours/${tourId}/availability/rules/reorder`,
+    ruleIds
+  )
+  return data
+}
+
+export function useReorderAvailabilityRules(tourId?: string) {
+  return useMutation({
+    mutationFn: reorderAvailabilityRules,
+    onSuccess: (response) => {
+      toast.success(response.message || "Rule order updated")
+      if (tourId) invalidateAvailability(tourId)
+    },
+    onError: (err) => {
+      toast.error(apiErrorMessage(err, "Failed to reorder rules"))
+    },
+  })
+}
+
+export const getChangeImpact = async (tourId: string) => {
+  const { data } = await axios.get<ApiResponse<ChangeImpactResponse>>(
+    `tours/${tourId}/change-impact`
+  )
+  return data.data
+}
+
+export function useChangeImpact(tourId?: string) {
+  return useQuery({
+    queryKey: [...availabilityKey(tourId ?? ""), "change-impact"],
+    queryFn: () => getChangeImpact(tourId!),
+    enabled: Boolean(tourId),
+  })
+}
+
 export const bulkUpdateAvailability = async ({
   tourId,
   payload,
@@ -244,11 +287,20 @@ export const blockAvailabilityDates = async ({
   tourId: string
   payload: BlockDatesRequest
 }) => {
-  const { data } = await axios.post<ApiResponse<unknown>>(
-    `tours/${tourId}/availability/block-dates`,
-    payload
-  )
-  return data
+  return bulkUpdateAvailability({
+    tourId,
+    payload: {
+      selection: {
+        mode: "DATE_RANGE",
+        from: payload.from,
+        to: payload.to,
+      },
+      windows: payload.timeslotIds.map((timeslotId) => ({
+        timeslotId,
+        blocked: true,
+      })),
+    },
+  })
 }
 
 export function useBlockAvailabilityDates(tourId?: string) {

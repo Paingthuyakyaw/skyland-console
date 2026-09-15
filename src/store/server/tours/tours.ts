@@ -55,6 +55,14 @@ export const getTour = async (id: string) => {
   return data.data
 }
 
+export function useTour(id: string, enabled = true) {
+  return useQuery({
+    queryKey: [...TOURS_KEY, id],
+    queryFn: () => getTour(id),
+    enabled: enabled && id.length > 0,
+  })
+}
+
 export const updateTour = async ({
   id,
   version,
@@ -92,6 +100,20 @@ export function useCreateTour() {
     },
     onError: (err) => {
       toast.error(apiErrorMessage(err, "Failed to create tour"))
+    },
+  })
+}
+
+export function useUpdateTour() {
+  return useMutation({
+    mutationFn: updateTour,
+    onSuccess: (response, { id }) => {
+      toast.success(response.message || "Tour updated")
+      invalidateTours()
+      void queryClient.invalidateQueries({ queryKey: [...TOURS_KEY, id] })
+    },
+    onError: (err) => {
+      toast.error(apiErrorMessage(err, "Failed to update tour"))
     },
   })
 }

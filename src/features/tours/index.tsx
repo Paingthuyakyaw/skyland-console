@@ -113,6 +113,12 @@ const ToursFeature = () => {
         totalElements={totalElements}
         pageSize={PAGE_SIZE}
         onPageChange={(page) => setUi((current) => ({ ...current, page }))}
+        onEdit={(tour) => {
+          void navigate({
+            to: "/tours/$id",
+            params: { id: tour.id },
+          })
+        }}
         onRequestDelete={(tour) => {
           setUi((current) => ({
             ...current,

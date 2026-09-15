@@ -32,6 +32,7 @@ import { Route as AuthenticatedStaffIndexRouteImport } from "./routes/_authentic
 import { Route as AuthenticatedStaffIdRouteImport } from "./routes/_authenticated/staff/$id"
 import { Route as AuthenticatedStaffPermissionsRouteImport } from "./routes/_authenticated/staff/permissions"
 import { Route as AuthenticatedToursIndexRouteImport } from "./routes/_authenticated/tours/index"
+import { Route as AuthenticatedToursIdRouteImport } from "./routes/_authenticated/tours/$id"
 import { Route as AuthenticatedToursNewRouteImport } from "./routes/_authenticated/tours/new"
 import { Route as AuthenticatedWebsiteIndexRouteImport } from "./routes/_authenticated/website/index"
 
@@ -166,6 +167,11 @@ const AuthenticatedToursIndexRoute = AuthenticatedToursIndexRouteImport.update({
   path: "/tours/",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedToursIdRoute = AuthenticatedToursIdRouteImport.update({
+  id: "/tours/$id",
+  path: "/tours/$id",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedToursNewRoute = AuthenticatedToursNewRouteImport.update({
   id: "/tours/new",
   path: "/tours/new",
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   "/promotions/new": typeof AuthenticatedPromotionsNewRoute
   "/staff/$id": typeof AuthenticatedStaffIdRoute
   "/staff/permissions": typeof AuthenticatedStaffPermissionsRoute
+  "/tours/$id": typeof AuthenticatedToursIdRoute
   "/tours/new": typeof AuthenticatedToursNewRoute
   "/bookings/": typeof AuthenticatedBookingsIndexRoute
   "/combo-tours/": typeof AuthenticatedComboToursIndexRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   "/promotions/new": typeof AuthenticatedPromotionsNewRoute
   "/staff/$id": typeof AuthenticatedStaffIdRoute
   "/staff/permissions": typeof AuthenticatedStaffPermissionsRoute
+  "/tours/$id": typeof AuthenticatedToursIdRoute
   "/tours/new": typeof AuthenticatedToursNewRoute
   "/bookings": typeof AuthenticatedBookingsIndexRoute
   "/combo-tours": typeof AuthenticatedComboToursIndexRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   "/_authenticated/promotions/new": typeof AuthenticatedPromotionsNewRoute
   "/_authenticated/staff/$id": typeof AuthenticatedStaffIdRoute
   "/_authenticated/staff/permissions": typeof AuthenticatedStaffPermissionsRoute
+  "/_authenticated/tours/$id": typeof AuthenticatedToursIdRoute
   "/_authenticated/tours/new": typeof AuthenticatedToursNewRoute
   "/_authenticated/bookings/": typeof AuthenticatedBookingsIndexRoute
   "/_authenticated/combo-tours/": typeof AuthenticatedComboToursIndexRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | "/promotions/new"
     | "/staff/$id"
     | "/staff/permissions"
+    | "/tours/$id"
     | "/tours/new"
     | "/bookings/"
     | "/combo-tours/"
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | "/promotions/new"
     | "/staff/$id"
     | "/staff/permissions"
+    | "/tours/$id"
     | "/tours/new"
     | "/bookings"
     | "/combo-tours"
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | "/_authenticated/promotions/new"
     | "/_authenticated/staff/$id"
     | "/_authenticated/staff/permissions"
+    | "/_authenticated/tours/$id"
     | "/_authenticated/tours/new"
     | "/_authenticated/bookings/"
     | "/_authenticated/combo-tours/"
@@ -508,6 +520,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedToursIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/tours/$id": {
+      id: "/_authenticated/tours/$id"
+      path: "/tours/$id"
+      fullPath: "/tours/$id"
+      preLoaderRoute: typeof AuthenticatedToursIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/tours/new": {
       id: "/_authenticated/tours/new"
       path: "/tours/new"
@@ -535,6 +554,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPromotionsNewRoute: typeof AuthenticatedPromotionsNewRoute
   AuthenticatedStaffIdRoute: typeof AuthenticatedStaffIdRoute
   AuthenticatedStaffPermissionsRoute: typeof AuthenticatedStaffPermissionsRoute
+  AuthenticatedToursIdRoute: typeof AuthenticatedToursIdRoute
   AuthenticatedToursNewRoute: typeof AuthenticatedToursNewRoute
   AuthenticatedBookingsIndexRoute: typeof AuthenticatedBookingsIndexRoute
   AuthenticatedComboToursIndexRoute: typeof AuthenticatedComboToursIndexRoute
@@ -561,6 +581,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPromotionsNewRoute: AuthenticatedPromotionsNewRoute,
   AuthenticatedStaffIdRoute: AuthenticatedStaffIdRoute,
   AuthenticatedStaffPermissionsRoute: AuthenticatedStaffPermissionsRoute,
+  AuthenticatedToursIdRoute: AuthenticatedToursIdRoute,
   AuthenticatedToursNewRoute: AuthenticatedToursNewRoute,
   AuthenticatedBookingsIndexRoute: AuthenticatedBookingsIndexRoute,
   AuthenticatedComboToursIndexRoute: AuthenticatedComboToursIndexRoute,

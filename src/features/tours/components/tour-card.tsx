@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,11 +9,17 @@ import { cn } from "@/lib/utils"
 
 type TourCardProps = {
   tour: TourSummary
+  onEdit: (tour: TourSummary) => void
   onRequestDelete: (tour: TourSummary) => void
   deleting: boolean
 }
 
-export function TourCard({ tour, onRequestDelete, deleting }: TourCardProps) {
+export function TourCard({
+  tour,
+  onEdit,
+  onRequestDelete,
+  deleting,
+}: TourCardProps) {
   const categoryName = tour.primaryCategory?.name
   const difficulty = tour.difficultyLabel
   const meta = [categoryName, difficulty].filter(Boolean).join(" · ")
@@ -61,16 +67,27 @@ export function TourCard({ tour, onRequestDelete, deleting }: TourCardProps) {
             from{" "}
             <b className="text-base text-foreground">{formatPrice(tour)}</b>
           </span>
-          <Button
-            type="button"
-            size="icon-sm"
-            variant="outline"
-            aria-label={`Delete ${tour.title}`}
-            disabled={deleting}
-            onClick={() => onRequestDelete(tour)}
-          >
-            <Trash2 />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onEdit(tour)}
+            >
+              <Pencil className="size-3.5" />
+              Edit
+            </Button>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="outline"
+              aria-label={`Delete ${tour.title}`}
+              disabled={deleting}
+              onClick={() => onRequestDelete(tour)}
+            >
+              <Trash2 />
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

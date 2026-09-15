@@ -17,6 +17,7 @@ type ToursGridProps = {
   totalElements: number
   pageSize: number
   onPageChange: (page: number) => void
+  onEdit: (tour: TourSummary) => void
   onRequestDelete: (tour: TourSummary) => void
 }
 
@@ -32,6 +33,7 @@ export function ToursGrid({
   totalElements,
   pageSize,
   onPageChange,
+  onEdit,
   onRequestDelete,
 }: ToursGridProps) {
   return (
@@ -72,6 +74,7 @@ export function ToursGrid({
                 key={tour.id}
                 tour={tour}
                 deleting={deleting}
+                onEdit={onEdit}
                 onRequestDelete={onRequestDelete}
               />
             ))}
