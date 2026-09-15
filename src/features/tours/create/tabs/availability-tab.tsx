@@ -286,6 +286,12 @@ function dayStatus(data?: CalendarDayResponse): CalendarUiStatus {
   return data.status
 }
 
+function reasonLabel(reason?: string) {
+  if (!reason) return "Blocked"
+  if (reason === "DEPARTURE_NOT_CONFIGURED") return "Blocked"
+  return reason
+}
+
 function usedQuantity(data: CalendarDayResponse) {
   return (
     (data.confirmedQuantity ?? 0) +
@@ -761,7 +767,7 @@ export function AvailabilityTab({
                             ) : null}
                             {status === "BLOCKED" ? (
                               <span className="mt-0.5 text-[9px] leading-tight opacity-70">
-                                {data?.unavailabilityReason ?? "Blocked"}
+                                {reasonLabel(data?.unavailabilityReason)}
                               </span>
                             ) : null}
                             {status !== "NOT_CONFIGURED" &&
@@ -881,7 +887,7 @@ export function AvailabilityTab({
                           <span className="font-bold text-muted-foreground">
                             Reason:{" "}
                           </span>
-                          {selected.unavailabilityReason}
+                          {reasonLabel(selected.unavailabilityReason)}
                         </p>
                       ) : null}
 
@@ -939,7 +945,7 @@ export function AvailabilityTab({
                               {window.unavailabilityReason ? (
                                 <p className="mt-1.5 text-[11px] text-muted-foreground">
                                   <span className="font-bold">Reason:</span>{" "}
-                                  {window.unavailabilityReason}
+                                  {reasonLabel(window.unavailabilityReason)}
                                 </p>
                               ) : null}
                             </div>
