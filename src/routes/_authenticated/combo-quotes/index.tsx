@@ -2,10 +2,10 @@
 import InquiriesPage from "@/features/inquiries"
 import { createFileRoute } from "@tanstack/react-router"
 
-export const Route = createFileRoute("/_authenticated/inquiries/")({
-  component: TourInquiriesPage,
+export const Route = createFileRoute("/_authenticated/combo-quotes/")({
+  component: ComboQuotesPage,
 })
 
-function TourInquiriesPage() {
-  return <InquiriesPage kind="tour" />
+function ComboQuotesPage() {
+  return <InquiriesPage kind="combo" />
 }

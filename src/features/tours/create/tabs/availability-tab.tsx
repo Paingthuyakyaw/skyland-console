@@ -16,6 +16,7 @@ import { useMemo, useState } from "react"
 import { CustomDialog } from "@/components/custom-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -1177,26 +1178,24 @@ export function AvailabilityTab({
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <FieldLabel>Start date</FieldLabel>
-                <Input
-                  type="date"
+                <DatePicker
                   value={bulk.from}
-                  onChange={(event) =>
+                  onChange={(from) =>
                     setUi((current) => ({
                       ...current,
-                      bulk: { ...current.bulk, from: event.target.value },
+                      bulk: { ...current.bulk, from },
                     }))
                   }
                 />
               </Field>
               <Field>
                 <FieldLabel>End date</FieldLabel>
-                <Input
-                  type="date"
+                <DatePicker
                   value={bulk.to}
-                  onChange={(event) =>
+                  onChange={(to) =>
                     setUi((current) => ({
                       ...current,
-                      bulk: { ...current.bulk, to: event.target.value },
+                      bulk: { ...current.bulk, to },
                     }))
                   }
                 />
@@ -1427,22 +1426,18 @@ export function AvailabilityTab({
           <div className="grid grid-cols-2 gap-3">
             <Field>
               <FieldLabel>Start date</FieldLabel>
-              <Input
-                type="date"
+              <DatePicker
                 value={ruleForm.dateRangeStart}
-                onChange={(event) =>
-                  patchRuleForm({ dateRangeStart: event.target.value })
+                onChange={(dateRangeStart) =>
+                  patchRuleForm({ dateRangeStart })
                 }
               />
             </Field>
             <Field>
               <FieldLabel>End date</FieldLabel>
-              <Input
-                type="date"
+              <DatePicker
                 value={ruleForm.dateRangeEnd}
-                onChange={(event) =>
-                  patchRuleForm({ dateRangeEnd: event.target.value })
-                }
+                onChange={(dateRangeEnd) => patchRuleForm({ dateRangeEnd })}
               />
             </Field>
           </div>

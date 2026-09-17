@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -287,19 +288,17 @@ export function CouponEditorForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel>Start date</FieldLabel>
-                <Input
-                  type="date"
+                <DatePicker
                   value={form.startDate}
-                  onChange={(event) => patch({ startDate: event.target.value })}
+                  onChange={(startDate) => patch({ startDate })}
                 />
               </Field>
               <Field>
                 <FieldLabel>End date</FieldLabel>
-                <Input
-                  type="date"
+                <DatePicker
                   disabled={form.noEndDate}
                   value={form.endDate}
-                  onChange={(event) => patch({ endDate: event.target.value })}
+                  onChange={(endDate) => patch({ endDate })}
                 />
               </Field>
             </div>

@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from "./routes/_authenticated"
 import { Route as authLoginRouteImport } from "./routes/(auth)/login"
 import { Route as AuthenticatedIndexRouteImport } from "./routes/_authenticated/index"
 import { Route as AuthenticatedBookingsIndexRouteImport } from "./routes/_authenticated/bookings/index"
+import { Route as AuthenticatedComboQuotesIndexRouteImport } from "./routes/_authenticated/combo-quotes/index"
 import { Route as AuthenticatedComboToursIndexRouteImport } from "./routes/_authenticated/combo-tours/index"
 import { Route as AuthenticatedComboToursIdRouteImport } from "./routes/_authenticated/combo-tours/$id"
 import { Route as AuthenticatedComboToursNewRouteImport } from "./routes/_authenticated/combo-tours/new"
@@ -21,6 +22,7 @@ import { Route as AuthenticatedDashboardIndexRouteImport } from "./routes/_authe
 import { Route as AuthenticatedHolidayPackagesIndexRouteImport } from "./routes/_authenticated/holiday-packages/index"
 import { Route as AuthenticatedHolidayPackagesIdRouteImport } from "./routes/_authenticated/holiday-packages/$id"
 import { Route as AuthenticatedHolidayPackagesNewRouteImport } from "./routes/_authenticated/holiday-packages/new"
+import { Route as AuthenticatedHolidayQuotesIndexRouteImport } from "./routes/_authenticated/holiday-quotes/index"
 import { Route as AuthenticatedInquiriesIndexRouteImport } from "./routes/_authenticated/inquiries/index"
 import { Route as AuthenticatedPaymentsIndexRouteImport } from "./routes/_authenticated/payments/index"
 import { Route as AuthenticatedPromotionsIndexRouteImport } from "./routes/_authenticated/promotions/index"
@@ -54,6 +56,12 @@ const AuthenticatedBookingsIndexRoute =
   AuthenticatedBookingsIndexRouteImport.update({
     id: "/bookings/",
     path: "/bookings/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedComboQuotesIndexRoute =
+  AuthenticatedComboQuotesIndexRouteImport.update({
+    id: "/combo-quotes/",
+    path: "/combo-quotes/",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedComboToursIndexRoute =
@@ -102,6 +110,12 @@ const AuthenticatedHolidayPackagesNewRoute =
   AuthenticatedHolidayPackagesNewRouteImport.update({
     id: "/holiday-packages/new",
     path: "/holiday-packages/new",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedHolidayQuotesIndexRoute =
+  AuthenticatedHolidayQuotesIndexRouteImport.update({
+    id: "/holiday-quotes/",
+    path: "/holiday-quotes/",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedInquiriesIndexRoute =
@@ -198,10 +212,12 @@ export interface FileRoutesByFullPath {
   "/tours/$id": typeof AuthenticatedToursIdRoute
   "/tours/new": typeof AuthenticatedToursNewRoute
   "/bookings/": typeof AuthenticatedBookingsIndexRoute
+  "/combo-quotes/": typeof AuthenticatedComboQuotesIndexRoute
   "/combo-tours/": typeof AuthenticatedComboToursIndexRoute
   "/customers/": typeof AuthenticatedCustomersIndexRoute
   "/dashboard/": typeof AuthenticatedDashboardIndexRoute
   "/holiday-packages/": typeof AuthenticatedHolidayPackagesIndexRoute
+  "/holiday-quotes/": typeof AuthenticatedHolidayQuotesIndexRoute
   "/inquiries/": typeof AuthenticatedInquiriesIndexRoute
   "/payments/": typeof AuthenticatedPaymentsIndexRoute
   "/promotions/": typeof AuthenticatedPromotionsIndexRoute
@@ -225,10 +241,12 @@ export interface FileRoutesByTo {
   "/tours/$id": typeof AuthenticatedToursIdRoute
   "/tours/new": typeof AuthenticatedToursNewRoute
   "/bookings": typeof AuthenticatedBookingsIndexRoute
+  "/combo-quotes": typeof AuthenticatedComboQuotesIndexRoute
   "/combo-tours": typeof AuthenticatedComboToursIndexRoute
   "/customers": typeof AuthenticatedCustomersIndexRoute
   "/dashboard": typeof AuthenticatedDashboardIndexRoute
   "/holiday-packages": typeof AuthenticatedHolidayPackagesIndexRoute
+  "/holiday-quotes": typeof AuthenticatedHolidayQuotesIndexRoute
   "/inquiries": typeof AuthenticatedInquiriesIndexRoute
   "/payments": typeof AuthenticatedPaymentsIndexRoute
   "/promotions": typeof AuthenticatedPromotionsIndexRoute
@@ -254,10 +272,12 @@ export interface FileRoutesById {
   "/_authenticated/tours/$id": typeof AuthenticatedToursIdRoute
   "/_authenticated/tours/new": typeof AuthenticatedToursNewRoute
   "/_authenticated/bookings/": typeof AuthenticatedBookingsIndexRoute
+  "/_authenticated/combo-quotes/": typeof AuthenticatedComboQuotesIndexRoute
   "/_authenticated/combo-tours/": typeof AuthenticatedComboToursIndexRoute
   "/_authenticated/customers/": typeof AuthenticatedCustomersIndexRoute
   "/_authenticated/dashboard/": typeof AuthenticatedDashboardIndexRoute
   "/_authenticated/holiday-packages/": typeof AuthenticatedHolidayPackagesIndexRoute
+  "/_authenticated/holiday-quotes/": typeof AuthenticatedHolidayQuotesIndexRoute
   "/_authenticated/inquiries/": typeof AuthenticatedInquiriesIndexRoute
   "/_authenticated/payments/": typeof AuthenticatedPaymentsIndexRoute
   "/_authenticated/promotions/": typeof AuthenticatedPromotionsIndexRoute
@@ -283,10 +303,12 @@ export interface FileRouteTypes {
     | "/tours/$id"
     | "/tours/new"
     | "/bookings/"
+    | "/combo-quotes/"
     | "/combo-tours/"
     | "/customers/"
     | "/dashboard/"
     | "/holiday-packages/"
+    | "/holiday-quotes/"
     | "/inquiries/"
     | "/payments/"
     | "/promotions/"
@@ -310,10 +332,12 @@ export interface FileRouteTypes {
     | "/tours/$id"
     | "/tours/new"
     | "/bookings"
+    | "/combo-quotes"
     | "/combo-tours"
     | "/customers"
     | "/dashboard"
     | "/holiday-packages"
+    | "/holiday-quotes"
     | "/inquiries"
     | "/payments"
     | "/promotions"
@@ -338,10 +362,12 @@ export interface FileRouteTypes {
     | "/_authenticated/tours/$id"
     | "/_authenticated/tours/new"
     | "/_authenticated/bookings/"
+    | "/_authenticated/combo-quotes/"
     | "/_authenticated/combo-tours/"
     | "/_authenticated/customers/"
     | "/_authenticated/dashboard/"
     | "/_authenticated/holiday-packages/"
+    | "/_authenticated/holiday-quotes/"
     | "/_authenticated/inquiries/"
     | "/_authenticated/payments/"
     | "/_authenticated/promotions/"
@@ -385,6 +411,13 @@ declare module "@tanstack/react-router" {
       path: "/bookings"
       fullPath: "/bookings/"
       preLoaderRoute: typeof AuthenticatedBookingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/combo-quotes/": {
+      id: "/_authenticated/combo-quotes/"
+      path: "/combo-quotes"
+      fullPath: "/combo-quotes/"
+      preLoaderRoute: typeof AuthenticatedComboQuotesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/combo-tours/": {
@@ -441,6 +474,13 @@ declare module "@tanstack/react-router" {
       path: "/holiday-packages/new"
       fullPath: "/holiday-packages/new"
       preLoaderRoute: typeof AuthenticatedHolidayPackagesNewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/holiday-quotes/": {
+      id: "/_authenticated/holiday-quotes/"
+      path: "/holiday-quotes"
+      fullPath: "/holiday-quotes/"
+      preLoaderRoute: typeof AuthenticatedHolidayQuotesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/inquiries/": {
@@ -557,10 +597,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedToursIdRoute: typeof AuthenticatedToursIdRoute
   AuthenticatedToursNewRoute: typeof AuthenticatedToursNewRoute
   AuthenticatedBookingsIndexRoute: typeof AuthenticatedBookingsIndexRoute
+  AuthenticatedComboQuotesIndexRoute: typeof AuthenticatedComboQuotesIndexRoute
   AuthenticatedComboToursIndexRoute: typeof AuthenticatedComboToursIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
   AuthenticatedHolidayPackagesIndexRoute: typeof AuthenticatedHolidayPackagesIndexRoute
+  AuthenticatedHolidayQuotesIndexRoute: typeof AuthenticatedHolidayQuotesIndexRoute
   AuthenticatedInquiriesIndexRoute: typeof AuthenticatedInquiriesIndexRoute
   AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedPromotionsIndexRoute: typeof AuthenticatedPromotionsIndexRoute
@@ -584,11 +626,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedToursIdRoute: AuthenticatedToursIdRoute,
   AuthenticatedToursNewRoute: AuthenticatedToursNewRoute,
   AuthenticatedBookingsIndexRoute: AuthenticatedBookingsIndexRoute,
+  AuthenticatedComboQuotesIndexRoute: AuthenticatedComboQuotesIndexRoute,
   AuthenticatedComboToursIndexRoute: AuthenticatedComboToursIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   AuthenticatedHolidayPackagesIndexRoute:
     AuthenticatedHolidayPackagesIndexRoute,
+  AuthenticatedHolidayQuotesIndexRoute: AuthenticatedHolidayQuotesIndexRoute,
   AuthenticatedInquiriesIndexRoute: AuthenticatedInquiriesIndexRoute,
   AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedPromotionsIndexRoute: AuthenticatedPromotionsIndexRoute,

@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DateTimePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -320,13 +321,12 @@ export function GeneralPublishingTab({
             {form.status === "SCHEDULED" ? (
               <Field>
                 <FieldLabel>Schedule date & time</FieldLabel>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
                   value={form.scheduledPublishAt}
-                  onChange={(event) =>
+                  onChange={(scheduledPublishAt) =>
                     onChange({
                       ...form,
-                      scheduledPublishAt: event.target.value,
+                      scheduledPublishAt,
                     })
                   }
                 />

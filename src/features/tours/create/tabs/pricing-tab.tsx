@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { CustomDialog } from "@/components/custom-dialog"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import {
@@ -234,26 +235,24 @@ export function PricingTab({ packageId }: { packageId?: string }) {
             <div className="grid grid-cols-2 gap-3">
               <Field>
                 <FieldLabel>From</FieldLabel>
-                <Input
-                  type="date"
+                <DatePicker
                   value={ruleDraft.startDate}
-                  onChange={(event) =>
+                  onChange={(startDate) =>
                     setRuleDraft((current) => ({
                       ...current,
-                      startDate: event.target.value,
+                      startDate,
                     }))
                   }
                 />
               </Field>
               <Field>
                 <FieldLabel>To</FieldLabel>
-                <Input
-                  type="date"
+                <DatePicker
                   value={ruleDraft.endDate}
-                  onChange={(event) =>
+                  onChange={(endDate) =>
                     setRuleDraft((current) => ({
                       ...current,
-                      endDate: event.target.value,
+                      endDate,
                     }))
                   }
                 />
@@ -263,13 +262,12 @@ export function PricingTab({ packageId }: { packageId?: string }) {
           {ruleDraft.ruleType === "SINGLE_DATE" ? (
             <Field>
               <FieldLabel>Date</FieldLabel>
-              <Input
-                type="date"
+              <DatePicker
                 value={ruleDraft.singleDate}
-                onChange={(event) =>
+                onChange={(singleDate) =>
                   setRuleDraft((current) => ({
                     ...current,
-                    singleDate: event.target.value,
+                    singleDate,
                   }))
                 }
               />

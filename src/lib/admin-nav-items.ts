@@ -24,12 +24,13 @@ export type AdminNavItem = {
 
 export const adminNavItems: AdminNavItem[] = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "Bookings", to: "/bookings", icon: Calendar },
+  { label: "Tour Bookings", to: "/bookings", icon: Calendar },
   { label: "Tours", to: "/tours", icon: Package },
   { label: "Promotions & Coupons", to: "/promotions", icon: TicketPercent },
-  { label: "Holiday Package", to: "/holiday-packages", icon: CakeSlice },
   { label: "Combo Tours", to: "/combo-tours", icon: Layers2 },
-  { label: "Inquiries", to: "/inquiries", icon: Inbox },
+  { label: "Tour Inquiries", to: "/inquiries", icon: Inbox },
+  { label: "Combo Tour Quotes", to: "/combo-quotes", icon: Layers2 },
+  { label: "Holiday Package Quotes", to: "/holiday-quotes", icon: CakeSlice },
   { label: "Customers", to: "/customers", icon: Users },
   { label: "Staff", to: "/staff", icon: UsersRound },
   { label: "Payments & Revenue", to: "/payments", icon: CreditCard },
