@@ -29,8 +29,12 @@ export type PriceDraft = {
   sale?: number
 }
 
-function textValues(items?: TextItemResponse[]) {
-  return items?.map((item) => item.value.trim()).filter(Boolean) ?? []
+function textValues(items?: Array<TextItemResponse | string>) {
+  return (
+    items
+      ?.map((item) => (typeof item === "string" ? item : item.value).trim())
+      .filter(Boolean) ?? []
+  )
 }
 
 function tourToRequest(
@@ -64,6 +68,7 @@ function tourToRequest(
       instantConfirmation: detail.settings?.instantConfirmation ?? true,
       minGuestsPerBooking: detail.settings?.minGuestsPerBooking ?? 1,
       maxGuestsPerBooking: detail.settings?.maxGuestsPerBooking ?? 20,
+      paymentOptions: detail.settings?.paymentOptions ?? ["FULL_PAYMENT"],
     },
     languagesOffered: textValues(detail.languagesOffered),
     pickupZones: textValues(detail.pickupZones),
@@ -85,7 +90,7 @@ function tourToRequest(
         privateTourPrice: pkg.privateTourPrice,
         featured: pkg.featured,
         groupPriceTiers: pkg.groupPriceTiers ?? [],
-        checklist: pkg.checklist ?? [],
+        checklist: textValues(pkg.checklist),
       })),
     })),
     images: (detail.images ?? [])
@@ -102,6 +107,7 @@ function tourToRequest(
       title: badge.title,
       shortInfo: badge.shortInfo ?? "",
     })),
+    termsAndConditions: textValues(detail.termsAndConditions),
   }
 
   if (detail.secondaryCategory?.id) {

@@ -13,6 +13,8 @@ export type PaymentStatus =
   | "PROCESSING"
   | "REQUIRES_ACTION"
   | "SUCCEEDED"
+  | "PARTIALLY_PAID"
+  | "PAY_ON_ARRIVAL"
   | "FAILED"
   | "CANCELLED"
   | "REFUND_PENDING"
@@ -20,6 +22,8 @@ export type PaymentStatus =
   | "DISPUTED"
 
 export type RefundStatus = "PENDING" | "SUCCEEDED" | "FAILED"
+
+export type PaymentOption = "FULL_PAYMENT" | "HALF_PAYMENT" | "PAY_ON_ARRIVAL"
 
 export type AddonPricingBasis = "PER_GUEST" | "PER_BOOKING" | "PER_UNIT"
 
@@ -30,6 +34,9 @@ export type BookingSummary = {
   phoneNumber?: string
   bookingStatus: BookingStatus
   paymentStatus: PaymentStatus
+  paymentOption?: PaymentOption
+  amountDueNow?: number
+  outstandingAmount?: number
   baseSubtotal?: number
   addonSubtotal?: number
   totalAmount?: number

@@ -7,6 +7,7 @@ import { PagePlaceholder } from "@/components/page-placeholder"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { TourChangeImpactDialog } from "@/features/tours/components/tour-change-impact-dialog"
 import { AddonsTab } from "@/features/tours/create/tabs/addons-tab"
 import { AvailabilityTab } from "@/features/tours/create/tabs/availability-tab"
 import { BookingCapacityTab } from "@/features/tours/create/tabs/booking-capacity-tab"
@@ -20,19 +21,26 @@ import {
   createInitialTourForm,
   formFromDetail,
   validateTourForm,
+  type PackageDraft,
+  type TimeslotDraft,
   type TourFormState,
 } from "@/features/tours/create/tour-form"
 import { statusLabel } from "@/features/tours/components/utils"
 import { cn } from "@/lib/utils"
+import { apiErrorCode, apiErrorMessage } from "@/store/server/api-error"
+import { getChangeImpact } from "@/store/server/tours/availability"
 import { useCancellationPolicyOptions } from "@/store/server/tours/cancellation-policies"
 import { useTourCategories } from "@/store/server/tours/categories"
 import {
+  useArchiveTimeslot,
+  useArchiveTimeslotPackage,
   useCreateTour,
   useTour,
   useUpdateTour,
 } from "@/store/server/tours/tours"
 import type {
   CancellationPolicyOption,
+  ChangeImpactResponse,
   TourCategory,
   TourResponse,
   TourStatus,
@@ -50,6 +58,72 @@ type CreatePageState = {
 
 type CreateTourPageProps = {
   tourId?: string
+}
+
+type ArchiveTarget =
+  | {
+      kind: "timeslot"
+      timeslotId: string
+      label: string
+    }
+  | {
+      kind: "package"
+      timeslotId: string
+      packageId: string
+      label: string
+    }
+
+type ImpactDialogState =
+  | {
+      kind: "update"
+      impact: ChangeImpactResponse | null
+      form: TourFormState
+      actionLabel: string
+    }
+  | {
+      kind: "archive"
+      impact: ChangeImpactResponse | null
+      target: ArchiveTarget
+      actionLabel: string
+    }
+
+function removeArchivedTarget(form: TourFormState, target: ArchiveTarget) {
+  if (target.kind === "timeslot") {
+    return {
+      ...form,
+      timeslots: form.timeslots.filter((slot) => slot.id !== target.timeslotId),
+    }
+  }
+
+  return {
+    ...form,
+    timeslots: form.timeslots.map((slot) =>
+      slot.id !== target.timeslotId
+        ? slot
+        : {
+            ...slot,
+            packages: slot.packages.filter(
+              (timeslotPackage) => timeslotPackage.id !== target.packageId
+            ),
+          }
+    ),
+  }
+}
+
+function archiveActionLabel(target: ArchiveTarget) {
+  return target.kind === "timeslot" ? "Archive timeslot" : "Archive package"
+}
+
+function archiveTitle(target: ArchiveTarget) {
+  return target.kind === "timeslot" ? "Archive timeslot?" : "Archive package?"
+}
+
+function archiveDescription(target: ArchiveTarget) {
+  return `“${target.label}” will no longer be available for future checkout. Existing booking and audit history will be retained.`
+}
+
+function archiveImpactUnavailableDescription(target: ArchiveTarget) {
+  return `We could not calculate the reservation impact for “${target.label}”. You can still archive it, but review active holds and confirmed bookings separately.`
 }
 
 const POST_CREATE_TABS = new Set(["availability", "promotions"])
@@ -82,10 +156,17 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
     form: createInitialTourForm(),
     activeTab: "general",
   }))
+  const [showValidation, setShowValidation] = useState(false)
+  const [checkingImpact, setCheckingImpact] = useState(false)
+  const [impactDialog, setImpactDialog] = useState<ImpactDialogState | null>(
+    null
+  )
   const { form, activeTab, createdTour, savedAt } = page
   const tourQuery = useTour(tourId ?? "", isEdit)
   const createTour = useCreateTour()
   const updateTour = useUpdateTour()
+  const archiveTimeslot = useArchiveTimeslot()
+  const archiveTimeslotPackage = useArchiveTimeslotPackage()
   const { data: primaryData } = useTourCategories(true, {
     level: "PRIMARY",
   })
@@ -102,7 +183,11 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
   const cancellationPolicies = policyData ?? EMPTY_POLICIES
   const savedTour = createdTour
   const tourCreated = Boolean(savedTour)
-  const saving = createTour.isPending || updateTour.isPending
+  const archiving =
+    archiveTimeslot.isPending || archiveTimeslotPackage.isPending
+  const saving =
+    createTour.isPending || updateTour.isPending || archiving || checkingImpact
+  const validationIssues = showValidation ? validateTourForm(form) : []
 
   useEffect(() => {
     const detail = tourQuery.data
@@ -155,39 +240,189 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
     }))
   }
 
-  const handleSave = (status: TourStatus) => {
-    const nextForm = { ...form, status }
-    const errors = validateTourForm(nextForm)
-    if (errors.length > 0) {
-      toast.error(errors[0])
-      setPage((current) => ({
+  const applyArchivedTarget = (tour: TourResponse, target: ArchiveTarget) => {
+    setPage((current) => {
+      const nextForm = removeArchivedTarget(current.form, target)
+      return {
         ...current,
+        form: { ...nextForm, version: tour.version ?? nextForm.version },
+        createdTour: tour,
+        savedAt: lastSavedLabel(tour.updatedAt) || lastSavedLabel(),
+      }
+    })
+  }
+
+  const updateSavedTour = (nextForm: TourFormState) => {
+    if (!savedTour) return
+
+    updateTour.mutate(
+      {
+        id: savedTour.id,
+        version: nextForm.version ?? savedTour.version ?? 0,
+        tour: buildTourRequest(nextForm),
+      },
+      {
+        onSuccess: (response) => {
+          setImpactDialog(null)
+          if (response.data) {
+            applySavedTour(nextForm, response.data)
+          }
+        },
+        onError: (error) => {
+          if (
+            apiErrorCode(error) === "tour.change_impact_requires_resolution"
+          ) {
+            void checkChangeImpact(nextForm)
+            return
+          }
+
+          toast.error(apiErrorMessage(error, "Failed to update the tour"))
+        },
+      }
+    )
+  }
+
+  const checkChangeImpact = async (
+    nextForm: TourFormState,
+    actionLabel = nextForm.status === "DRAFT"
+      ? "Continue and save draft"
+      : "Continue and update tour"
+  ) => {
+    if (!savedTour) return
+
+    setCheckingImpact(true)
+    try {
+      const impact = await getChangeImpact(savedTour.id)
+      setImpactDialog({
+        kind: "update",
+        impact,
         form: nextForm,
-        activeTab: "general",
-      }))
-      return
+        actionLabel,
+      })
+    } catch (error) {
+      toast.warning(
+        apiErrorMessage(
+          error,
+          "Could not calculate the tour change impact. You can still continue after confirming."
+        )
+      )
+      setImpactDialog({
+        kind: "update",
+        impact: null,
+        form: nextForm,
+        actionLabel,
+      })
+    } finally {
+      setCheckingImpact(false)
+    }
+  }
+
+  const confirmArchive = async (target: ArchiveTarget) => {
+    if (!savedTour) return
+
+    setCheckingImpact(true)
+    try {
+      const impact = await getChangeImpact(savedTour.id)
+      setImpactDialog({
+        kind: "archive",
+        impact,
+        target,
+        actionLabel: archiveActionLabel(target),
+      })
+    } catch (error) {
+      toast.warning(
+        apiErrorMessage(
+          error,
+          "Could not calculate the tour change impact. You can still archive after confirming."
+        )
+      )
+      setImpactDialog({
+        kind: "archive",
+        impact: null,
+        target,
+        actionLabel: archiveActionLabel(target),
+      })
+    } finally {
+      setCheckingImpact(false)
+    }
+  }
+
+  const archiveSavedTarget = (target: ArchiveTarget) => {
+    if (!savedTour) return
+
+    const version = form.version ?? savedTour.version ?? 0
+    const onSuccess = (response: { data: TourResponse }) => {
+      setImpactDialog(null)
+      applyArchivedTarget(response.data, target)
     }
 
-    const payload = buildTourRequest(nextForm)
-
-    if (savedTour) {
-      updateTour.mutate(
+    if (target.kind === "timeslot") {
+      archiveTimeslot.mutate(
         {
-          id: savedTour.id,
-          version: nextForm.version ?? savedTour.version ?? 0,
-          tour: payload,
+          tourId: savedTour.id,
+          timeslotId: target.timeslotId,
+          version,
         },
-        {
-          onSuccess: (response) => {
-            if (response.data) {
-              applySavedTour(nextForm, response.data)
-            }
-          },
-        }
+        { onSuccess }
       )
       return
     }
 
+    archiveTimeslotPackage.mutate(
+      {
+        tourId: savedTour.id,
+        timeslotId: target.timeslotId,
+        packageId: target.packageId,
+        version,
+      },
+      { onSuccess }
+    )
+  }
+
+  const requestTimeslotArchive = (timeslot: TimeslotDraft) => {
+    if (!timeslot.id) return
+    void confirmArchive({
+      kind: "timeslot",
+      timeslotId: timeslot.id,
+      label: timeslot.name.trim() || "this timeslot",
+    })
+  }
+
+  const requestPackageArchive = (
+    timeslot: TimeslotDraft,
+    timeslotPackage: PackageDraft
+  ) => {
+    if (!timeslot.id || !timeslotPackage.id) return
+    void confirmArchive({
+      kind: "package",
+      timeslotId: timeslot.id,
+      packageId: timeslotPackage.id,
+      label: timeslotPackage.name.trim() || "this package",
+    })
+  }
+
+  const handleSave = (status: TourStatus) => {
+    const nextForm = { ...form, status }
+    const errors = validateTourForm(nextForm)
+    if (errors.length > 0) {
+      setShowValidation(true)
+      toast.error("Complete the required fields before saving the tour")
+      setPage((current) => ({
+        ...current,
+        form: nextForm,
+        activeTab: errors[0].tab,
+      }))
+      return
+    }
+
+    setShowValidation(false)
+
+    if (savedTour) {
+      void checkChangeImpact(nextForm)
+      return
+    }
+
+    const payload = buildTourRequest(nextForm)
     createTour.mutate(payload, {
       onSuccess: (response) => {
         if (response.data) {
@@ -272,7 +507,9 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
               type="button"
               disabled={saving}
               onClick={() =>
-                handleSave(tourCreated ? form.status || publishStatus : publishStatus)
+                handleSave(
+                  tourCreated ? form.status || publishStatus : publishStatus
+                )
               }
             >
               {saving && form.status !== "DRAFT"
@@ -284,6 +521,35 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
           </>
         }
       />
+
+      {validationIssues.length > 0 ? (
+        <div
+          role="alert"
+          className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4"
+        >
+          <p className="font-bold text-destructive">
+            Complete the required fields before saving this tour.
+          </p>
+          <p className="mt-1 text-sm text-destructive/90">
+            Select an item to jump to the relevant section.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {validationIssues.map((issue) => (
+              <button
+                key={`${issue.tab}-${issue.message}`}
+                type="button"
+                className="rounded-md border border-destructive/30 bg-background px-2.5 py-1.5 text-left text-xs font-medium text-destructive hover:bg-destructive/10"
+                onClick={() => openTab(issue.tab)}
+              >
+                <span className="font-bold">{issue.message}</span>
+                <span className="ml-1.5 text-destructive/70">
+                  ({TOUR_TABS.find((tab) => tab.key === issue.tab)?.label})
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <Tabs
         value={activeTab}
@@ -341,6 +607,9 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
               form={form}
               onChange={updateForm}
               createdTour={savedTour}
+              onArchiveTimeslot={requestTimeslotArchive}
+              onArchivePackage={requestPackageArchive}
+              archivePending={checkingImpact || archiving}
             />
           </TabsContent>
         ) : null}
@@ -374,6 +643,46 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
           </TabsContent>
         ) : null}
       </Tabs>
+
+      <TourChangeImpactDialog
+        open={impactDialog !== null}
+        onOpenChange={(open) => {
+          if (!open && !updateTour.isPending && !archiving) {
+            setImpactDialog(null)
+          }
+        }}
+        impact={impactDialog?.impact ?? null}
+        applying={
+          impactDialog?.kind === "archive" ? archiving : updateTour.isPending
+        }
+        actionLabel={impactDialog?.actionLabel ?? "Update tour"}
+        onApply={() => {
+          if (!impactDialog) return
+          if (impactDialog.kind === "archive") {
+            archiveSavedTarget(impactDialog.target)
+            return
+          }
+          updateSavedTour(impactDialog.form)
+        }}
+        title={
+          impactDialog?.kind === "archive"
+            ? archiveTitle(impactDialog.target)
+            : undefined
+        }
+        description={
+          impactDialog?.kind === "archive"
+            ? archiveDescription(impactDialog.target)
+            : undefined
+        }
+        applyingLabel={
+          impactDialog?.kind === "archive" ? "Archiving…" : undefined
+        }
+        impactUnavailableDescription={
+          impactDialog?.kind === "archive"
+            ? archiveImpactUnavailableDescription(impactDialog.target)
+            : undefined
+        }
+      />
     </div>
   )
 }

@@ -6,12 +6,34 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import type { TourFormState } from "@/features/tours/create/tour-form"
 import { cn } from "@/lib/utils"
-import type { BookingMode } from "@/store/server/tours/typed"
+import type { BookingMode, PaymentOption } from "@/store/server/tours/typed"
 
 const BOOKING_MODES: Array<{ value: BookingMode; label: string }> = [
   { value: "SHARED", label: "Book Online" },
   { value: "PRIVATE", label: "Inquiry Only" },
   { value: "BOTH", label: "Both" },
+]
+
+const PAYMENT_OPTIONS: Array<{
+  value: PaymentOption
+  label: string
+  hint: string
+}> = [
+  {
+    value: "FULL_PAYMENT",
+    label: "Full payment",
+    hint: "Charge the full booking total online",
+  },
+  {
+    value: "HALF_PAYMENT",
+    label: "50% payment",
+    hint: "Charge a 50% deposit online",
+  },
+  {
+    value: "PAY_ON_ARRIVAL",
+    label: "Pay on arrival",
+    hint: "Confirm now; collect the full balance on arrival",
+  },
 ]
 
 export function BookingCapacityTab({
@@ -23,6 +45,18 @@ export function BookingCapacityTab({
   onChange: (form: TourFormState) => void
   onOpenAvailability: () => void
 }) {
+  const togglePaymentOption = (paymentOption: PaymentOption) => {
+    const selected = form.paymentOptions.includes(paymentOption)
+    if (selected && form.paymentOptions.length === 1) return
+
+    onChange({
+      ...form,
+      paymentOptions: selected
+        ? form.paymentOptions.filter((value) => value !== paymentOption)
+        : [...form.paymentOptions, paymentOption],
+    })
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
@@ -94,7 +128,9 @@ export function BookingCapacityTab({
             />
           </div>
           <Field>
-            <FieldLabel>Pay-on-arrival confirmation deadline (hours)</FieldLabel>
+            <FieldLabel>
+              Pay-on-arrival confirmation deadline (hours)
+            </FieldLabel>
             <Input
               type="number"
               min={0}
@@ -139,9 +175,7 @@ export function BookingCapacityTab({
                 <button
                   key={item.value}
                   type="button"
-                  onClick={() =>
-                    onChange({ ...form, bookingMode: item.value })
-                  }
+                  onClick={() => onChange({ ...form, bookingMode: item.value })}
                   className={cn(
                     "rounded-lg px-4 py-2 text-xs font-bold transition-colors",
                     form.bookingMode === item.value
@@ -152,6 +186,38 @@ export function BookingCapacityTab({
                   {item.label}
                 </button>
               ))}
+            </div>
+          </Field>
+          <Field>
+            <FieldLabel>Payment options</FieldLabel>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Customers can choose from every enabled option at checkout.
+            </p>
+            <div className="space-y-2">
+              {PAYMENT_OPTIONS.map((option) => {
+                const selected = form.paymentOptions.includes(option.value)
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => togglePaymentOption(option.value)}
+                    className={cn(
+                      "w-full rounded-lg border px-3 py-2 text-left transition-colors",
+                      selected
+                        ? "border-primary bg-primary-soft text-primary"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/40"
+                    )}
+                  >
+                    <span className="block text-sm font-bold">
+                      {option.label}
+                    </span>
+                    <span className="block text-xs opacity-80">
+                      {option.hint}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </Field>
           <div className="flex items-center justify-between rounded-lg bg-muted/70 px-4 py-3">
@@ -199,8 +265,8 @@ export function BookingCapacityTab({
             </Field>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Maximum guests per booking must be equal to or greater than
-            minimum guests per booking.
+            Maximum guests per booking must be equal to or greater than minimum
+            guests per booking.
           </p>
         </CardContent>
       </Card>

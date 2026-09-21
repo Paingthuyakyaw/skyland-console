@@ -224,6 +224,17 @@ export function ExperienceLogisticsTab({
                 addLabel="Add item"
               />
             </div>
+            <div className="sm:col-span-2">
+              <StringListField
+                label="Terms and conditions"
+                values={form.termsAndConditions}
+                onChange={(termsAndConditions) =>
+                  onChange({ ...form, termsAndConditions })
+                }
+                placeholder="Cancellation and participation terms"
+                addLabel="Add term"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

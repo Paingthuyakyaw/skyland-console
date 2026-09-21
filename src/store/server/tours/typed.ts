@@ -81,6 +81,8 @@ export type ApiResponse<T> = {
 
 export type BookingMode = "SHARED" | "PRIVATE" | "BOTH"
 
+export type PaymentOption = "FULL_PAYMENT" | "HALF_PAYMENT" | "PAY_ON_ARRIVAL"
+
 export type Weekday =
   | "MONDAY"
   | "TUESDAY"
@@ -95,18 +97,12 @@ export type AvailabilityStatus = "OPEN" | "LIMITED" | "SOLD_OUT" | "BLOCKED"
 export type RuleCategory = "SEASONAL" | "RELIGIOUS_OBSERVANCE" | "CUSTOM"
 
 export type RuleEffectType =
-  | "BLOCK"
-  | "ADJUST_PRICE"
-  | "ADJUST_CAPACITY"
-  | "SHIFT_TIME"
+  "BLOCK" | "ADJUST_PRICE" | "ADJUST_CAPACITY" | "SHIFT_TIME"
 
 export type AdjustmentMode = "PERCENTAGE" | "FLAT_AMOUNT"
 
 export type PricingRuleType =
-  | "ALL_YEAR"
-  | "DATE_RANGE"
-  | "WEEKDAY_PATTERN"
-  | "SINGLE_DATE"
+  "ALL_YEAR" | "DATE_RANGE" | "WEEKDAY_PATTERN" | "SINGLE_DATE"
 
 export type PricingAdjustmentType = "PERCENTAGE" | "FIXED_OVERRIDE"
 
@@ -133,6 +129,7 @@ export type BookingSettingsRequest = {
   instantConfirmation: boolean
   minGuestsPerBooking: number
   maxGuestsPerBooking: number
+  paymentOptions: PaymentOption[]
 }
 
 export type BookingSettingsResponse = BookingSettingsRequest & {
@@ -154,6 +151,8 @@ export type GroupPriceTierRequest = {
 export type GroupPriceTierResponse = GroupPriceTierRequest
 
 export type TimeslotPackageRequest = {
+  /** Stable identity of an existing package; omit only when adding a new package. */
+  id?: string
   name: string
   vehicleType: string
   description: string
@@ -167,12 +166,24 @@ export type TimeslotPackageRequest = {
   checklist: string[]
 }
 
-export type TimeslotPackageResponse = TimeslotPackageRequest & {
+export type ChecklistItemResponse = {
   id: string
+  value: string
   sortOrder?: number
 }
 
+export type TimeslotPackageResponse = Omit<
+  TimeslotPackageRequest,
+  "checklist"
+> & {
+  id: string
+  sortOrder?: number
+  checklist: ChecklistItemResponse[]
+}
+
 export type TimeslotRequest = {
+  /** Stable identity of an existing timeslot; omit only when adding a new timeslot. */
+  id?: string
   name: string
   startTime: string
   endTime: string
@@ -296,6 +307,7 @@ export type TourRequest = {
   hotelPickupIncluded: boolean
   addons?: AddonRequest[]
   badges: BadgeRequest[]
+  termsAndConditions: string[]
 }
 
 export type TourResponse = {
@@ -334,6 +346,7 @@ export type TourResponse = {
   whatToBring?: TextItemResponse[]
   timeslots?: TimeslotResponse[]
   images?: ImageResponse[]
+  termsAndConditions?: string[]
   rating?: number
   reviewCount?: number
   version?: number

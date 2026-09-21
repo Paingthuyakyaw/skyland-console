@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { Ban, User, X } from "lucide-react"
+import { BadgeCheck, Ban, User, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,7 @@ import {
   BOOKING_STATUS_CLASS,
   BOOKING_STATUS_LABEL,
   canCancelBooking,
+  canRecordPayOnArrivalPayment,
   canRefundBooking,
   formatBookingRef,
   formatDate,
@@ -22,12 +23,14 @@ import {
   guestCount,
   PAYMENT_STATUS_CLASS,
   PAYMENT_STATUS_LABEL,
+  PAYMENT_OPTION_LABEL,
   REFUND_STATUS_CLASS,
 } from "@/features/bookings/components/utils"
 import { cn } from "@/lib/utils"
 import {
   useBooking,
   useCancelBooking,
+  useMarkPayOnArrivalPaid,
   useRefundBooking,
 } from "@/store/server/bookings/bookings"
 import type { BookingItem } from "@/store/server/bookings/typed"
@@ -78,6 +81,7 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
   const { data, isPending, isError } = useBooking(bookingId ?? "", open)
   const { data: toursPage } = useTours({ size: 100 })
   const cancelBooking = useCancelBooking()
+  const markPayOnArrivalPaid = useMarkPayOnArrivalPaid()
   const refundBooking = useRefundBooking()
   const [action, setAction] = useState<BookingActionKind | null>(null)
 
@@ -108,10 +112,29 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
   }, [bookingId])
 
   const summary = data?.summary
-  const submitting = cancelBooking.isPending || refundBooking.isPending
+  const submitting =
+    cancelBooking.isPending ||
+    refundBooking.isPending ||
+    markPayOnArrivalPaid.isPending
   const showCancel = summary ? canCancelBooking(summary.bookingStatus) : false
   const showRefund = summary
-    ? canRefundBooking(summary.bookingStatus, summary.paymentStatus)
+    ? canRefundBooking(
+        summary.bookingStatus,
+        summary.paymentStatus,
+        summary.paymentOption
+      )
+    : false
+  const remainingAmount =
+    summary?.paymentOption === "PAY_ON_ARRIVAL" &&
+    summary.paymentStatus === "SUCCEEDED"
+      ? 0
+      : summary?.outstandingAmount
+  const showMarkPaid = summary
+    ? canRecordPayOnArrivalPayment(
+        summary.bookingStatus,
+        summary.paymentStatus,
+        summary.paymentOption
+      )
     : false
 
   const handleAction = (reason: string) => {
@@ -128,6 +151,13 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
 
     if (action === "cancel") {
       cancelBooking.mutate(payload, {
+        onSuccess: () => setAction(null),
+      })
+      return
+    }
+
+    if (action === "mark-paid") {
+      markPayOnArrivalPaid.mutate(payload, {
         onSuccess: () => setAction(null),
       })
       return
@@ -268,6 +298,25 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
                     </Badge>
                   }
                 />
+                <Row
+                  key="payment-option"
+                  label="Payment method"
+                  value={
+                    summary.paymentOption
+                      ? PAYMENT_OPTION_LABEL[summary.paymentOption]
+                      : "—"
+                  }
+                />
+                <Row
+                  key="pay-now"
+                  label="Due now"
+                  value={formatMoney(summary.amountDueNow, summary.currency)}
+                />
+                <Row
+                  key="outstanding"
+                  label="Outstanding"
+                  value={formatMoney(remainingAmount, summary.currency)}
+                />
               </DrawerSection>
 
               {data?.items && data.items.length > 0 ? (
@@ -406,6 +455,14 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
                       {formatMoney(summary.totalAmount, summary.currency)}
                     </span>
                   </div>
+                  {(remainingAmount ?? 0) > 0 ? (
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Outstanding</span>
+                      <span className="font-medium text-foreground">
+                        {formatMoney(remainingAmount, summary.currency)}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </Card>
 
@@ -461,8 +518,18 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
               ) : null}
             </div>
 
-            {showCancel || showRefund ? (
+            {showCancel || showRefund || showMarkPaid ? (
               <div className="flex flex-wrap gap-2 border-t border-border px-6 py-4">
+                {showMarkPaid ? (
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => setAction("mark-paid")}
+                  >
+                    <BadgeCheck className="h-4 w-4" />
+                    Mark as paid
+                  </Button>
+                ) : null}
                 {showRefund ? (
                   <Button
                     type="button"

@@ -19,6 +19,7 @@ import {
   formatBookingRef,
   formatDateTime,
   formatMoney,
+  PAYMENT_OPTION_LABEL,
   PAYMENT_STATUS_CLASS,
   PAYMENT_STATUS_LABEL,
 } from "@/features/bookings/components/utils"
@@ -83,6 +84,7 @@ export function BookingsTable({
                   "Customer",
                   "Created",
                   "Total",
+                  "Method",
                   "Payment",
                   "Status",
                   "Action",
@@ -123,6 +125,11 @@ export function BookingsTable({
                   </td>
                   <td className="px-4 py-4 text-sm font-bold text-foreground">
                     {formatMoney(booking.totalAmount, booking.currency)}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-muted-foreground">
+                    {booking.paymentOption
+                      ? PAYMENT_OPTION_LABEL[booking.paymentOption]
+                      : "—"}
                   </td>
                   <td className="px-4 py-4">
                     <Badge
@@ -170,7 +177,8 @@ export function BookingsTable({
                             acting ||
                             !canRefundBooking(
                               booking.bookingStatus,
-                              booking.paymentStatus
+                              booking.paymentStatus,
+                              booking.paymentOption
                             )
                           }
                           onClick={() => onRefund(booking)}

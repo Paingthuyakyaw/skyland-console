@@ -5,6 +5,7 @@ import type {
   AddonResponse,
   BadgeRequest,
   BookingMode,
+  PaymentOption,
   TextItemResponse,
   TimeslotPackageRequest,
   TimeslotRequest,
@@ -62,6 +63,7 @@ export type TourFormState = {
   instantConfirmation: boolean
   minGuestsPerBooking: string
   maxGuestsPerBooking: string
+  paymentOptions: PaymentOption[]
   languagesOffered: string[]
   pickupZones: string[]
   inclusions: string[]
@@ -74,9 +76,18 @@ export type TourFormState = {
   hotelPickupIncluded: boolean
   addons: AddonDraft[]
   badges: BadgeDraft[]
+  termsAndConditions: string[]
   metaTitle: string
   metaDescription: string
   version: number
+}
+
+export type TourFormTab =
+  "general" | "experience" | "timeslots" | "booking" | "media"
+
+export type TourFormValidationIssue = {
+  tab: TourFormTab
+  message: string
 }
 
 function nextKey() {
@@ -163,6 +174,7 @@ export function createInitialTourForm(): TourFormState {
     instantConfirmation: true,
     minGuestsPerBooking: "1",
     maxGuestsPerBooking: "20",
+    paymentOptions: ["FULL_PAYMENT"],
     languagesOffered: ["English"],
     pickupZones: [],
     inclusions: [""],
@@ -175,6 +187,7 @@ export function createInitialTourForm(): TourFormState {
     hotelPickupIncluded: false,
     addons: [],
     badges: [],
+    termsAndConditions: [],
     metaTitle: "",
     metaDescription: "",
     version: 0,
@@ -186,8 +199,21 @@ function toNumber(value: string, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-function cleanList(values: string[]) {
-  return values.map((value) => value.trim()).filter(Boolean)
+function textValue(value: unknown) {
+  if (typeof value === "string") return value.trim()
+  if (
+    value &&
+    typeof value === "object" &&
+    "value" in value &&
+    typeof value.value === "string"
+  ) {
+    return value.value.trim()
+  }
+  return ""
+}
+
+function cleanList(values: readonly unknown[]) {
+  return values.map(textValue).filter(Boolean)
 }
 
 function addonCodeFromName(name: string) {
@@ -204,7 +230,9 @@ export function buildAddonRequest(
 ): AddonRequest {
   const name = (addon.name ?? addon.title ?? "").trim()
   const desc = (addon.desc ?? addon.description ?? "").trim()
-  const unitAmount = toNumber(String(addon.unitAmount ?? addon.pricePerPerson ?? 0))
+  const unitAmount = toNumber(
+    String(addon.unitAmount ?? addon.pricePerPerson ?? 0)
+  )
   const maxCap = Math.max(0, toNumber(String(addon.maxCap ?? 0)))
   const maxQuantity = Math.max(
     1,
@@ -241,11 +269,7 @@ export function applyTitleChange(form: TourFormState, title: string) {
 }
 
 function textValues(items?: Array<TextItemResponse | string>) {
-  return (
-    items
-      ?.map((item) => (typeof item === "string" ? item : item.value).trim())
-      .filter(Boolean) ?? []
-  )
+  return cleanList(items ?? [])
 }
 
 function toDatetimeLocal(value?: string) {
@@ -298,6 +322,7 @@ export function formFromDetail(detail: TourResponse): TourFormState {
     instantConfirmation: detail.settings?.instantConfirmation ?? true,
     minGuestsPerBooking: String(detail.settings?.minGuestsPerBooking ?? 1),
     maxGuestsPerBooking: String(detail.settings?.maxGuestsPerBooking ?? 20),
+    paymentOptions: detail.settings?.paymentOptions ?? ["FULL_PAYMENT"],
     languagesOffered: languages.length > 0 ? languages : ["English"],
     pickupZones: textValues(detail.pickupZones),
     inclusions: inclusions.length > 0 ? inclusions : [""],
@@ -306,30 +331,34 @@ export function formFromDetail(detail: TourResponse): TourFormState {
     timeslots:
       timeslots.length > 0
         ? timeslots.map((slot) => ({
+            id: slot.id,
             key: slot.id,
             name: slot.name,
             startTime: slot.startTime,
             endTime: slot.endTime,
             packages:
               (slot.packages ?? []).length > 0
-                ? (slot.packages ?? []).map((pkg) => ({
-                    key: pkg.id,
-                    name: pkg.name,
-                    vehicleType: pkg.vehicleType,
-                    description: pkg.description,
-                    adultPrice: pkg.adultPrice,
-                    childPrice: pkg.childPrice ?? 0,
-                    infantPrice: pkg.infantPrice ?? 0,
-                    seniorPrice: pkg.seniorPrice ?? 0,
-                    privateTourPrice: pkg.privateTourPrice ?? 0,
-                    featured: pkg.featured,
-                    groupPriceTiers:
-                      pkg.groupPriceTiers?.length > 0
-                        ? pkg.groupPriceTiers
-                        : [{ minPax: 4, pricePerPax: pkg.adultPrice }],
-                    checklist:
-                      pkg.checklist?.length > 0 ? pkg.checklist : [""],
-                  }))
+                ? (slot.packages ?? []).map((pkg) => {
+                    const checklist = cleanList(pkg.checklist ?? [])
+                    return {
+                      id: pkg.id,
+                      key: pkg.id,
+                      name: pkg.name,
+                      vehicleType: pkg.vehicleType,
+                      description: pkg.description,
+                      adultPrice: pkg.adultPrice,
+                      childPrice: pkg.childPrice ?? 0,
+                      infantPrice: pkg.infantPrice ?? 0,
+                      seniorPrice: pkg.seniorPrice ?? 0,
+                      privateTourPrice: pkg.privateTourPrice ?? 0,
+                      featured: pkg.featured,
+                      groupPriceTiers:
+                        pkg.groupPriceTiers?.length > 0
+                          ? pkg.groupPriceTiers
+                          : [{ minPax: 4, pricePerPax: pkg.adultPrice }],
+                      checklist: checklist.length > 0 ? checklist : [""],
+                    }
+                  })
                 : [createEmptyPackage(true)],
           }))
         : [createEmptyTimeslot()],
@@ -356,6 +385,7 @@ export function formFromDetail(detail: TourResponse): TourFormState {
       title: badge.title,
       shortInfo: badge.shortInfo ?? "",
     })),
+    termsAndConditions: cleanList(detail.termsAndConditions ?? []),
     metaTitle: detail.seo?.metaTitle ?? "",
     metaDescription: detail.seo?.metaDescription ?? "",
     version: detail.version ?? 0,
@@ -363,24 +393,54 @@ export function formFromDetail(detail: TourResponse): TourFormState {
 }
 
 export function validateTourForm(form: TourFormState) {
-  const errors: string[] = []
+  const errors: TourFormValidationIssue[] = []
+  const add = (tab: TourFormTab, message: string) =>
+    errors.push({ tab, message })
 
-  if (!form.title.trim()) errors.push("Tour title is required")
-  if (!form.slug.trim()) errors.push("URL slug is required")
-  if (!form.shortDescription.trim()) errors.push("Short description is required")
+  if (!form.title.trim()) add("general", "Tour title is required")
+  if (!form.slug.trim()) add("general", "URL slug is required")
+  if (!form.shortDescription.trim())
+    add("general", "Short description is required")
   if (isEmptyHtml(form.longDescription)) {
-    errors.push("Long description is required")
+    add("general", "Long description is required")
   }
-  if (!form.primaryCategoryId) errors.push("Primary category is required")
-  if (!form.cancellationPolicyId) errors.push("Cancellation policy is required")
-  if (!form.meetingPoint.trim()) errors.push("Meeting point is required")
-  if (toNumber(form.duration, 0) < 1) errors.push("Duration must be at least 1 hour")
+  if (!form.primaryCategoryId) add("general", "Primary category is required")
+  if (!form.cancellationPolicyId)
+    add("general", "Cancellation policy is required")
+  if (!form.meetingPoint.trim()) add("experience", "Meeting point is required")
+  if (toNumber(form.duration, 0) < 1)
+    add("general", "Duration must be at least 1 hour")
   if (form.discountPrice.trim() && toNumber(form.discountPrice) < 0) {
-    errors.push("Discount price cannot be negative")
+    add("general", "Discount price cannot be negative")
   }
-  if (form.images.length === 0) errors.push("Upload at least one gallery image")
+  if (form.status === "SCHEDULED" && !form.scheduledPublishAt) {
+    add(
+      "general",
+      "A publication date and time is required for scheduled tours"
+    )
+  }
+  if (form.paymentOptions.length === 0) {
+    add("booking", "Select at least one payment option")
+  }
+  if (toNumber(form.minGuestsPerBooking, 0) < 1) {
+    add("booking", "Minimum guests per booking must be at least 1")
+  }
+  if (toNumber(form.maxGuestsPerBooking, 0) < 1) {
+    add("booking", "Maximum guests per booking must be at least 1")
+  }
+  if (
+    toNumber(form.maxGuestsPerBooking, 0) <
+    toNumber(form.minGuestsPerBooking, 0)
+  ) {
+    add(
+      "booking",
+      "Maximum guests per booking must be equal to or greater than minimum guests"
+    )
+  }
+  if (form.images.length === 0)
+    add("media", "Upload at least one gallery image")
   if (!form.images.some((image) => image.featured)) {
-    errors.push("Set a featured gallery image")
+    add("media", "Set a featured gallery image")
   }
 
   const validTimeslots = form.timeslots.filter((slot) => {
@@ -389,7 +449,7 @@ export function validateTourForm(form: TourFormState) {
     return hasIdentity && hasPackage
   })
   if (validTimeslots.length === 0) {
-    errors.push("Add at least one timeslot with a package")
+    add("timeslots", "Add at least one timeslot with a package")
   }
 
   return errors
@@ -409,6 +469,7 @@ function buildPackageRequest(
     .sort((left, right) => left.minPax - right.minPax)
 
   return {
+    ...(pkg.id ? { id: pkg.id } : {}),
     name: pkg.name.trim(),
     vehicleType: pkg.vehicleType.trim() || "Shared",
     description:
@@ -436,6 +497,7 @@ export function buildTourRequest(form: TourFormState): TourRequest {
         packages[0].featured = true
       }
       return {
+        ...(slot.id ? { id: slot.id } : {}),
         name: slot.name.trim(),
         startTime: slot.startTime,
         endTime: slot.endTime,
@@ -446,9 +508,8 @@ export function buildTourRequest(form: TourFormState): TourRequest {
 
   const catalogAdult = toNumber(form.adultPrice)
   const featuredAdult =
-    timeslots
-      .flatMap((slot) => slot.packages)
-      .find((pkg) => pkg.featured)?.adultPrice ?? 0
+    timeslots.flatMap((slot) => slot.packages).find((pkg) => pkg.featured)
+      ?.adultPrice ?? 0
   const adultPrice = catalogAdult > 0 ? catalogAdult : featuredAdult
 
   const request: TourRequest = {
@@ -479,6 +540,7 @@ export function buildTourRequest(form: TourFormState): TourRequest {
       instantConfirmation: form.instantConfirmation,
       minGuestsPerBooking: Math.max(1, toNumber(form.minGuestsPerBooking, 1)),
       maxGuestsPerBooking: Math.max(1, toNumber(form.maxGuestsPerBooking, 1)),
+      paymentOptions: form.paymentOptions,
     },
     languagesOffered: cleanList(form.languagesOffered),
     pickupZones: cleanList(form.pickupZones),
@@ -500,6 +562,7 @@ export function buildTourRequest(form: TourFormState): TourRequest {
         title: badge.title.trim(),
         shortInfo: badge.shortInfo.trim(),
       })),
+    termsAndConditions: cleanList(form.termsAndConditions),
   }
 
   if (form.secondaryCategoryId) {

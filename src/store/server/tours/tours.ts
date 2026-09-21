@@ -16,6 +16,16 @@ export type DeleteTourPayload = {
   id: string
 }
 
+export type ArchiveTimeslotPayload = {
+  tourId: string
+  timeslotId: string
+  version: number
+}
+
+export type ArchiveTimeslotPackagePayload = ArchiveTimeslotPayload & {
+  packageId: string
+}
+
 const TOURS_KEY = ["tours"] as const
 
 function invalidateTours() {
@@ -86,6 +96,36 @@ export const deleteTour = async ({ id }: DeleteTourPayload) => {
   return data
 }
 
+/**
+ * Retires a sellable timeslot without deleting the historical record used by
+ * existing bookings. This is deliberately separate from aggregate tour PUTs.
+ */
+export const archiveTimeslot = async ({
+  tourId,
+  timeslotId,
+  version,
+}: ArchiveTimeslotPayload) => {
+  const { data } = await axios.delete<ApiResponse<TourResponse>>(
+    `tours/${tourId}/timeslots/${timeslotId}`,
+    { params: { version } }
+  )
+  return data
+}
+
+/** Retires one sellable package while retaining booking and audit history. */
+export const archiveTimeslotPackage = async ({
+  tourId,
+  timeslotId,
+  packageId,
+  version,
+}: ArchiveTimeslotPackagePayload) => {
+  const { data } = await axios.delete<ApiResponse<TourResponse>>(
+    `tours/${tourId}/timeslots/${timeslotId}/packages/${packageId}`,
+    { params: { version } }
+  )
+  return data
+}
+
 export const createTour = async (payload: TourRequest) => {
   const { data } = await axios.post<ApiResponse<TourResponse>>("tours", payload)
   return data
@@ -127,6 +167,41 @@ export function useDeleteTour() {
     },
     onError: (err) => {
       toast.error(apiErrorMessage(err, "Failed to delete tour"))
+    },
+  })
+}
+
+function invalidateArchivedCatalog(tourId: string) {
+  invalidateTours()
+  void queryClient.invalidateQueries({
+    queryKey: ["tour-availability", tourId],
+  })
+}
+
+export function useArchiveTimeslot() {
+  return useMutation({
+    mutationFn: archiveTimeslot,
+    onSuccess: (response, { tourId }) => {
+      toast.success(response.message || "Timeslot archived")
+      invalidateArchivedCatalog(tourId)
+    },
+    onError: (err) => {
+      toast.error(apiErrorMessage(err, "Failed to archive the timeslot"))
+    },
+  })
+}
+
+export function useArchiveTimeslotPackage() {
+  return useMutation({
+    mutationFn: archiveTimeslotPackage,
+    onSuccess: (response, { tourId }) => {
+      toast.success(response.message || "Timeslot package archived")
+      invalidateArchivedCatalog(tourId)
+    },
+    onError: (err) => {
+      toast.error(
+        apiErrorMessage(err, "Failed to archive the timeslot package")
+      )
     },
   })
 }

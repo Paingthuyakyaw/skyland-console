@@ -2,6 +2,7 @@ import type {
   BookingItem,
   BookingStatus,
   PaymentStatus,
+  PaymentOption,
   RefundStatus,
 } from "@/store/server/bookings/typed"
 
@@ -21,6 +22,8 @@ export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
   PROCESSING: "Processing",
   REQUIRES_ACTION: "Action required",
   SUCCEEDED: "Paid",
+  PARTIALLY_PAID: "50% paid",
+  PAY_ON_ARRIVAL: "Pay on arrival",
   FAILED: "Failed",
   CANCELLED: "Cancelled",
   REFUND_PENDING: "Refund pending",
@@ -44,12 +47,26 @@ export const PAYMENT_STATUS_CLASS: Record<PaymentStatus, string> = {
   PROCESSING: "bg-status-pending-bg text-status-pending",
   REQUIRES_ACTION: "bg-status-pending-bg text-status-pending",
   SUCCEEDED: "bg-status-confirmed-bg text-status-confirmed",
+  PARTIALLY_PAID: "bg-status-pending-bg text-status-pending",
+  PAY_ON_ARRIVAL: "bg-primary-soft text-primary",
   FAILED: "bg-status-cancelled-bg text-status-cancelled",
   CANCELLED: "bg-status-cancelled-bg text-status-cancelled",
   REFUND_PENDING: "bg-status-pending-bg text-status-pending",
   REFUNDED: "bg-muted text-muted-foreground",
   DISPUTED: "bg-status-cancelled-bg text-status-cancelled",
 }
+
+export const PAYMENT_OPTION_LABEL: Record<PaymentOption, string> = {
+  FULL_PAYMENT: "Full payment",
+  HALF_PAYMENT: "50% payment",
+  PAY_ON_ARRIVAL: "Pay on arrival",
+}
+
+export const PAY_ON_ARRIVAL_REASON_ITEMS = {
+  "Cash collected at departure": "Cash collected at departure",
+  "Cash collected at meeting point": "Cash collected at meeting point",
+  Other: "Other",
+} as const
 
 export const REFUND_STATUS_CLASS: Record<RefundStatus, string> = {
   PENDING: "bg-status-pending-bg text-status-pending",
@@ -75,6 +92,8 @@ export const PAYMENT_FILTER_ITEMS = {
   PROCESSING: PAYMENT_STATUS_LABEL.PROCESSING,
   REQUIRES_ACTION: PAYMENT_STATUS_LABEL.REQUIRES_ACTION,
   SUCCEEDED: PAYMENT_STATUS_LABEL.SUCCEEDED,
+  PARTIALLY_PAID: PAYMENT_STATUS_LABEL.PARTIALLY_PAID,
+  PAY_ON_ARRIVAL: PAYMENT_STATUS_LABEL.PAY_ON_ARRIVAL,
   FAILED: PAYMENT_STATUS_LABEL.FAILED,
   CANCELLED: PAYMENT_STATUS_LABEL.CANCELLED,
   REFUND_PENDING: PAYMENT_STATUS_LABEL.REFUND_PENDING,
@@ -166,8 +185,10 @@ export function canCancelBooking(status: BookingStatus) {
 
 export function canRefundBooking(
   bookingStatus: BookingStatus,
-  paymentStatus: PaymentStatus
+  paymentStatus: PaymentStatus,
+  paymentOption?: PaymentOption
 ) {
+  if (paymentOption === "PAY_ON_ARRIVAL") return false
   if (bookingStatus === "REFUNDED" || paymentStatus === "REFUNDED") {
     return false
   }
@@ -175,5 +196,17 @@ export function canRefundBooking(
     paymentStatus === "SUCCEEDED" ||
     paymentStatus === "REFUND_PENDING" ||
     bookingStatus === "REFUND_PENDING"
+  )
+}
+
+export function canRecordPayOnArrivalPayment(
+  bookingStatus: BookingStatus,
+  paymentStatus: PaymentStatus,
+  paymentOption?: PaymentOption
+) {
+  return (
+    bookingStatus === "CONFIRMED" &&
+    paymentOption === "PAY_ON_ARRIVAL" &&
+    paymentStatus === "PAY_ON_ARRIVAL"
   )
 }

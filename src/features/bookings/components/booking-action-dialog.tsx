@@ -13,10 +13,11 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import {
   CANCEL_REASON_ITEMS,
+  PAY_ON_ARRIVAL_REASON_ITEMS,
   REFUND_REASON_ITEMS,
 } from "@/features/bookings/components/utils"
 
-export type BookingActionKind = "cancel" | "refund"
+export type BookingActionKind = "cancel" | "refund" | "mark-paid"
 
 type BookingActionDialogProps = {
   open: boolean
@@ -27,7 +28,9 @@ type BookingActionDialogProps = {
 }
 
 function reasonItems(kind: BookingActionKind | null) {
-  return kind === "refund" ? REFUND_REASON_ITEMS : CANCEL_REASON_ITEMS
+  if (kind === "refund") return REFUND_REASON_ITEMS
+  if (kind === "mark-paid") return PAY_ON_ARRIVAL_REASON_ITEMS
+  return CANCEL_REASON_ITEMS
 }
 
 export function BookingActionDialog({
@@ -49,9 +52,18 @@ export function BookingActionDialog({
   }, [open, kind])
 
   const needsNote = reason === "Other"
-  const title = kind === "refund" ? "Refund booking" : "Cancel booking"
+  const title =
+    kind === "refund"
+      ? "Refund booking"
+      : kind === "mark-paid"
+        ? "Record pay-on-arrival payment"
+        : "Cancel booking"
   const confirmLabel =
-    kind === "refund" ? "Confirm refund" : "Confirm cancellation"
+    kind === "refund"
+      ? "Confirm refund"
+      : kind === "mark-paid"
+        ? "Mark as paid"
+        : "Confirm cancellation"
 
   const handleConfirm = () => {
     const trimmedNote = note.trim()
@@ -74,7 +86,9 @@ export function BookingActionDialog({
       description={
         kind === "refund"
           ? "This requests a refund through the connected payment gateway."
-          : "This cancels the reservation and records the reason against the booking."
+          : kind === "mark-paid"
+            ? "Confirm that the outstanding amount was collected offline. This creates an auditable manual payment record; it does not charge a card."
+            : "This cancels the reservation and records the reason against the booking."
       }
       showDone={false}
       contentClassName="sm:max-w-md"
@@ -90,14 +104,16 @@ export function BookingActionDialog({
           </Button>
           <Button
             type="button"
-            variant={kind === "refund" ? "default" : "destructive"}
+            variant={kind === "cancel" ? "destructive" : "default"}
             disabled={submitting || (needsNote && !note.trim())}
             onClick={handleConfirm}
           >
             {submitting
               ? kind === "refund"
                 ? "Refunding…"
-                : "Cancelling…"
+                : kind === "mark-paid"
+                  ? "Recording…"
+                  : "Cancelling…"
               : confirmLabel}
           </Button>
         </>
@@ -134,7 +150,9 @@ export function BookingActionDialog({
             placeholder={
               needsNote
                 ? "Add the cancellation or refund reason…"
-                : "Optional extra detail"
+                : kind === "mark-paid"
+                  ? "Optional collection detail"
+                  : "Optional extra detail"
             }
           />
         </Field>

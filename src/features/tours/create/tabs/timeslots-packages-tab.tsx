@@ -40,7 +40,11 @@ function CopyId({ id, label }: { id: string; label: string }) {
         {label}
       </span>
       <span className="max-w-[168px] truncate">{id}</span>
-      {copied ? <Check className="size-3 text-emerald-600" /> : <Copy className="size-3" />}
+      {copied ? (
+        <Check className="size-3 text-emerald-600" />
+      ) : (
+        <Copy className="size-3" />
+      )}
     </button>
   )
 }
@@ -49,19 +53,22 @@ export function TimeslotsPackagesTab({
   form,
   onChange,
   createdTour,
+  onArchiveTimeslot,
+  onArchivePackage,
+  archivePending = false,
 }: {
   form: TourFormState
   onChange: (form: TourFormState) => void
   createdTour?: TourResponse
+  onArchiveTimeslot?: (timeslot: TimeslotDraft) => void
+  onArchivePackage?: (
+    timeslot: TimeslotDraft,
+    timeslotPackage: PackageDraft
+  ) => void
+  archivePending?: boolean
 }) {
   const [pricingPackageId, setPricingPackageId] = useState<string | null>(null)
   const saved = Boolean(createdTour)
-  const savedPackages = createdTour?.timeslots?.flatMap((slot) =>
-    (slot.packages ?? []).map((pkg) => ({
-      ...pkg,
-      timeslotName: slot.name,
-    }))
-  )
 
   const updateSlot = (key: string, patch: Partial<TimeslotDraft>) => {
     onChange({
@@ -140,6 +147,20 @@ export function TimeslotsPackagesTab({
 
             {form.timeslots.map((slot) => {
               const midnight = crossesMidnight(slot.startTime, slot.endTime)
+              const removeTimeslot = () => {
+                if (slot.id && onArchiveTimeslot) {
+                  onArchiveTimeslot(slot)
+                  return
+                }
+
+                onChange({
+                  ...form,
+                  timeslots: form.timeslots.filter(
+                    (item) => item.key !== slot.key
+                  ),
+                })
+              }
+
               return (
                 <div
                   key={slot.key}
@@ -182,15 +203,14 @@ export function TimeslotsPackagesTab({
                     </span>
                     <button
                       type="button"
-                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() =>
-                        onChange({
-                          ...form,
-                          timeslots: form.timeslots.filter(
-                            (item) => item.key !== slot.key
-                          ),
-                        })
+                      disabled={archivePending}
+                      title={
+                        slot.id
+                          ? "Archive this saved timeslot"
+                          : "Remove this unsaved timeslot"
                       }
+                      className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      onClick={removeTimeslot}
                     >
                       <Trash2 className="size-4" />
                     </button>
@@ -198,16 +218,24 @@ export function TimeslotsPackagesTab({
 
                   <div className="space-y-2.5 bg-muted/20 p-3">
                     {slot.packages.map((pkg) => {
-                      const savedPkg = savedPackages?.find(
-                        (item) =>
-                          item.name === pkg.name &&
-                          item.timeslotName === slot.name
-                      )
+                      const removePackage = () => {
+                        if (slot.id && pkg.id && onArchivePackage) {
+                          onArchivePackage(slot, pkg)
+                          return
+                        }
+
+                        updateSlot(slot.key, {
+                          packages: slot.packages.filter(
+                            (item) => item.key !== pkg.key
+                          ),
+                        })
+                      }
+
                       return (
                         <PackageCard
                           key={pkg.key}
                           pkg={pkg}
-                          savedId={savedPkg?.id}
+                          savedId={pkg.id}
                           onChange={(patch) =>
                             updatePackage(slot.key, pkg.key, patch)
                           }
@@ -232,16 +260,16 @@ export function TimeslotsPackagesTab({
                               ),
                             })
                           }}
-                          onRemove={() =>
-                            updateSlot(slot.key, {
-                              packages: slot.packages.filter(
-                                (item) => item.key !== pkg.key
-                              ),
-                            })
+                          onRemove={removePackage}
+                          archivePending={archivePending}
+                          removeTitle={
+                            slot.id && pkg.id
+                              ? "Archive this saved package"
+                              : "Remove this unsaved package"
                           }
                           onOpenPricing={
-                            savedPkg?.id
-                              ? () => setPricingPackageId(savedPkg.id)
+                            pkg.id
+                              ? () => setPricingPackageId(pkg.id!)
                               : undefined
                           }
                         />
@@ -309,6 +337,8 @@ function PackageCard({
   onChange,
   onFeature,
   onRemove,
+  archivePending,
+  removeTitle,
   onOpenPricing,
 }: {
   pkg: PackageDraft
@@ -316,6 +346,8 @@ function PackageCard({
   onChange: (patch: Partial<PackageDraft>) => void
   onFeature: (featured: boolean) => void
   onRemove: () => void
+  archivePending: boolean
+  removeTitle: string
   onOpenPricing?: () => void
 }) {
   const updateTier = (
@@ -342,12 +374,17 @@ function PackageCard({
           onChange={(event) => onChange({ name: event.target.value })}
         />
         {pkg.featured ? (
-          <Badge variant="secondary" className="text-[10px] tracking-wider uppercase">
+          <Badge
+            variant="secondary"
+            className="text-[10px] tracking-wider uppercase"
+          >
             Featured
           </Badge>
         ) : null}
         <button
           type="button"
+          disabled={archivePending}
+          title={removeTitle}
           className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           onClick={onRemove}
         >
@@ -357,9 +394,18 @@ function PackageCard({
 
       {savedId || onOpenPricing ? (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          {savedId ? <CopyId id={savedId} label="timeslotPackageId" /> : <span />}
+          {savedId ? (
+            <CopyId id={savedId} label="timeslotPackageId" />
+          ) : (
+            <span />
+          )}
           {onOpenPricing ? (
-            <Button type="button" size="sm" variant="outline" onClick={onOpenPricing}>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={onOpenPricing}
+            >
               Advanced pricing
             </Button>
           ) : null}
@@ -459,7 +505,10 @@ function PackageCard({
           </button>
         </div>
         {pkg.groupPriceTiers.map((tier, index) => (
-          <div key={`${pkg.key}-tier-${index}`} className="flex items-center gap-2">
+          <div
+            key={`${pkg.key}-tier-${index}`}
+            className="flex items-center gap-2"
+          >
             <Input
               type="number"
               min={1}

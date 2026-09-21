@@ -116,3 +116,29 @@ export function useRefundBooking() {
     },
   })
 }
+
+export const markPayOnArrivalPaid = async ({
+  bookingId,
+  action,
+}: BookingActionPayload) => {
+  const { data } = await axios.post<ApiResponse<BookingDetail>>(
+    `bookings/${bookingId}/pay-on-arrival/mark-paid`,
+    action
+  )
+  return data
+}
+
+export function useMarkPayOnArrivalPaid() {
+  return useMutation({
+    mutationFn: markPayOnArrivalPaid,
+    onSuccess: (response) => {
+      toast.success(response.message || "Pay-on-arrival payment recorded")
+      invalidateBookings()
+    },
+    onError: (err) => {
+      toast.error(
+        apiErrorMessage(err, "Failed to record pay-on-arrival payment")
+      )
+    },
+  })
+}

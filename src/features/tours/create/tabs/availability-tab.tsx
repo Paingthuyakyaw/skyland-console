@@ -41,6 +41,7 @@ import {
   useReorderAvailabilityRules,
   useUpdateAvailabilityRule,
 } from "@/store/server/tours/availability"
+import { useTour } from "@/store/server/tours/tours"
 import type {
   AdjustmentMode,
   AvailabilityStatus,
@@ -236,8 +237,7 @@ function ruleToForm(rule: RuleResponse): RuleFormState {
     dateRangeEnd: rule.dateRangeEnd,
     daysOfWeek: rule.daysOfWeek ?? [],
     targetWindowIds: rule.targetWindowIds ?? [],
-    effectType:
-      rule.effectType === "ADJUST_PRICE" ? "BLOCK" : rule.effectType,
+    effectType: rule.effectType === "ADJUST_PRICE" ? "BLOCK" : rule.effectType,
     priceAdjustmentMode: rule.priceAdjustmentMode,
     priceAdjustmentValue: rule.priceAdjustmentValue,
     capacityAdjustmentMode: rule.capacityAdjustmentMode ?? "FLAT_AMOUNT",
@@ -250,10 +250,7 @@ function ruleToForm(rule: RuleResponse): RuleFormState {
   }
 }
 
-function buildRuleRequest(
-  form: RuleFormState,
-  priority: number
-): RuleRequest {
+function buildRuleRequest(form: RuleFormState, priority: number): RuleRequest {
   const request: RuleRequest = {
     name: form.name.trim(),
     category: form.category,
@@ -267,11 +264,16 @@ function buildRuleRequest(
   if (form.daysOfWeek && form.daysOfWeek.length > 0) {
     request.daysOfWeek = form.daysOfWeek
   }
-  if (!form.applyToAll && form.targetWindowIds && form.targetWindowIds.length > 0) {
+  if (
+    !form.applyToAll &&
+    form.targetWindowIds &&
+    form.targetWindowIds.length > 0
+  ) {
     request.targetWindowIds = form.targetWindowIds
   }
   if (form.effectType === "ADJUST_CAPACITY") {
-    request.capacityAdjustmentMode = form.capacityAdjustmentMode ?? "FLAT_AMOUNT"
+    request.capacityAdjustmentMode =
+      form.capacityAdjustmentMode ?? "FLAT_AMOUNT"
     request.capacityAdjustmentValue = form.capacityAdjustmentValue ?? 0
   }
   if (form.effectType === "SHIFT_TIME") {
@@ -315,10 +317,7 @@ function dayStatRows(day: CalendarDayResponse): [string, string][] {
       day.maxCapacity == null ? "Unlimited" : String(day.maxCapacity),
     ],
     ["Remaining", remaining],
-    [
-      "Confirmed",
-      String(day.confirmedQuantity ?? day.bookedCount ?? 0),
-    ],
+    ["Confirmed", String(day.confirmedQuantity ?? day.bookedCount ?? 0)],
     ["Held", String(day.heldQuantity ?? 0)],
     ["Reserved", String(day.reservedQuantity ?? 0)],
   ]
@@ -331,10 +330,7 @@ function windowStatRows(window: CalendarWindowResponse): [string, string][] {
       "Rem",
       window.remainingCapacity == null ? "∞" : String(window.remainingCapacity),
     ],
-    [
-      "Conf",
-      String(window.confirmedQuantity ?? window.bookedCount ?? 0),
-    ],
+    ["Conf", String(window.confirmedQuantity ?? window.bookedCount ?? 0)],
     ["Held", String(window.heldQuantity ?? 0)],
     ["Res", String(window.reservedQuantity ?? 0)],
   ]
@@ -415,7 +411,10 @@ export function AvailabilityTab({
   createdTour?: TourResponse
 }) {
   const tourId = createdTour?.id
-  const timeslots = createdTour?.timeslots ?? []
+  const tourDetails = useTour(tourId ?? "", Boolean(tourId))
+  // Availability updates use the persisted detail response so recently archived or changed
+  // timeslots cannot be submitted from stale editor state.
+  const timeslots = tourDetails.data?.timeslots ?? createdTour?.timeslots ?? []
   const [ui, setUi] = useState(createAvailabilityUi)
   const {
     subTab,
@@ -470,10 +469,12 @@ export function AvailabilityTab({
         <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <CalendarDays className="size-10 text-muted-foreground/40" />
           <div>
-            <p className="text-sm font-bold">Save the tour to configure availability</p>
+            <p className="text-sm font-bold">
+              Save the tour to configure availability
+            </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Availability needs a saved tour ID and timeslot IDs before calendar
-              dates, capacity, and advanced rules can be configured.
+              Availability needs a saved tour ID and timeslot IDs before
+              calendar dates, capacity, and advanced rules can be configured.
             </p>
           </div>
         </CardContent>
@@ -567,11 +568,16 @@ export function AvailabilityTab({
   }
 
   const handleSaveRule = () => {
-    if (!ruleForm.name.trim() || !ruleForm.dateRangeStart || !ruleForm.dateRangeEnd) {
+    if (
+      !ruleForm.name.trim() ||
+      !ruleForm.dateRangeStart ||
+      !ruleForm.dateRangeEnd
+    ) {
       return
     }
     const priority = editingRule
-      ? (editingRule.priority ?? rules.findIndex((rule) => rule.id === editingRule.id) + 1)
+      ? (editingRule.priority ??
+        rules.findIndex((rule) => rule.id === editingRule.id) + 1)
       : rules.length + 1
     const payload = buildRuleRequest(ruleForm, Math.max(1, priority))
 
@@ -655,7 +661,10 @@ export function AvailabilityTab({
         }}
         className="gap-4"
       >
-        <TabsList variant="line" className="w-full justify-start border-b border-border">
+        <TabsList
+          variant="line"
+          className="w-full justify-start border-b border-border"
+        >
           <TabsTrigger value="calendar">Calendar and Capacity</TabsTrigger>
           <TabsTrigger value="rules">Advanced Rules</TabsTrigger>
         </TabsList>
@@ -696,7 +705,10 @@ export function AvailabilityTab({
                     <div className="mb-3 flex flex-wrap items-center gap-3">
                       {(Object.keys(STATUS_LABELS) as CalendarUiStatus[]).map(
                         (status) => (
-                          <div key={status} className="flex items-center gap-1.5">
+                          <div
+                            key={status}
+                            className="flex items-center gap-1.5"
+                          >
                             <div
                               className={cn(
                                 "size-2.5 rounded-full",
@@ -715,7 +727,7 @@ export function AvailabilityTab({
                       {CALENDAR_WEEKDAYS.map((day) => (
                         <div
                           key={day.value}
-                          className="py-1 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+                          className="py-1 text-center text-[11px] font-bold tracking-wider text-muted-foreground uppercase"
                         >
                           {day.label}
                         </div>
@@ -756,7 +768,8 @@ export function AvailabilityTab({
                             <span
                               className={cn(
                                 "text-sm font-bold",
-                                isToday && "text-primary underline underline-offset-2"
+                                isToday &&
+                                  "text-primary underline underline-offset-2"
                               )}
                             >
                               {day}
@@ -775,7 +788,7 @@ export function AvailabilityTab({
                             status !== "BLOCKED" &&
                             data ? (
                               <>
-                                <span className="mt-0.5 text-[10px] font-bold leading-tight">
+                                <span className="mt-0.5 text-[10px] leading-tight font-bold">
                                   {data.maxCapacity == null
                                     ? "∞"
                                     : `${usedQuantity(data)}/${data.maxCapacity}`}
@@ -799,7 +812,8 @@ export function AvailabilityTab({
                       >
                         Bulk Update
                       </button>{" "}
-                      to configure capacity. C = confirmed · H = held · R = reserved.
+                      to configure capacity. C = confirmed · H = held · R =
+                      reserved.
                     </p>
                   </CardContent>
                 </Card>
@@ -862,7 +876,10 @@ export function AvailabilityTab({
                         variant="outline"
                         size="icon-sm"
                         onClick={() =>
-                          setUi((current) => ({ ...current, selectedDate: null }))
+                          setUi((current) => ({
+                            ...current,
+                            selectedDate: null,
+                          }))
                         }
                       >
                         <X />
@@ -875,7 +892,7 @@ export function AvailabilityTab({
                             key={label}
                             className="rounded-lg bg-muted/40 px-2.5 py-1.5 text-[11px]"
                           >
-                            <div className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <div className="text-[9px] font-bold tracking-wider text-muted-foreground uppercase">
                               {label}
                             </div>
                             <div className="font-black">{value}</div>
@@ -892,7 +909,7 @@ export function AvailabilityTab({
                         </p>
                       ) : null}
 
-                      <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      <div className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                         Timeslots
                       </div>
                       {(selected.windows ?? []).map(
@@ -931,17 +948,19 @@ export function AvailabilityTab({
                                 </span>
                               </div>
                               <div className="grid grid-cols-3 gap-1 text-[11px]">
-                                {windowStatRows(window).map(([label, value]) => (
-                                  <div
-                                    key={label}
-                                    className="rounded bg-muted/40 px-1.5 py-1 text-center"
-                                  >
-                                    <div className="text-[9px] font-bold text-muted-foreground">
-                                      {label}
+                                {windowStatRows(window).map(
+                                  ([label, value]) => (
+                                    <div
+                                      key={label}
+                                      className="rounded bg-muted/40 px-1.5 py-1 text-center"
+                                    >
+                                      <div className="text-[9px] font-bold text-muted-foreground">
+                                        {label}
+                                      </div>
+                                      <div className="font-black">{value}</div>
                                     </div>
-                                    <div className="font-black">{value}</div>
-                                  </div>
-                                ))}
+                                  )
+                                )}
                               </div>
                               {window.unavailabilityReason ? (
                                 <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -998,10 +1017,16 @@ export function AvailabilityTab({
                   <CardTitle>Advanced Rules</CardTitle>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     Rules override calendar settings and are applied in priority
-                    order (1 = highest). Saving recalculates effective availability.
+                    order (1 = highest). Saving recalculates effective
+                    availability.
                   </p>
                 </div>
-                <Button type="button" size="sm" variant="outline" onClick={openCreateRule}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={openCreateRule}
+                >
                   <Plus className="size-3.5" />
                   Add Rule
                 </Button>
@@ -1009,8 +1034,8 @@ export function AvailabilityTab({
               <CardContent className="space-y-2">
                 {rules.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-input py-8 text-center text-sm text-muted-foreground">
-                    No rules yet. Rules can block dates, adjust timeslot capacity,
-                    or shift departure times.
+                    No rules yet. Rules can block dates, adjust timeslot
+                    capacity, or shift departure times.
                   </div>
                 ) : null}
                 {rules.map((rule, index) => {
@@ -1021,7 +1046,10 @@ export function AvailabilityTab({
                       key={rule.id}
                       draggable
                       onDragStart={() =>
-                        setUi((current) => ({ ...current, dragRuleId: rule.id }))
+                        setUi((current) => ({
+                          ...current,
+                          dragRuleId: rule.id,
+                        }))
                       }
                       onDragOver={(event) => {
                         event.preventDefault()
@@ -1050,7 +1078,9 @@ export function AvailabilityTab({
                           <span
                             className={cn(
                               "text-sm font-bold",
-                              active ? "text-foreground" : "text-muted-foreground"
+                              active
+                                ? "text-foreground"
+                                : "text-muted-foreground"
                             )}
                           >
                             {rule.name}
@@ -1113,7 +1143,9 @@ export function AvailabilityTab({
               <CardContent className="flex items-start gap-3 pt-4">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-primary" />
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  <span className="font-bold text-foreground">Execution order:</span>{" "}
+                  <span className="font-bold text-foreground">
+                    Execution order:
+                  </span>{" "}
                   Rules are evaluated by priority (1 = highest). A BLOCK rule at
                   priority 1 prevents lower-priority rules from applying on the
                   same dates. ADJUST_CAPACITY has no numeric effect on timeslots
@@ -1301,7 +1333,10 @@ export function AvailabilityTab({
                   }))
                 }
                 return (
-                  <div key={slot.id} className="rounded-lg border border-border p-3">
+                  <div
+                    key={slot.id}
+                    className="rounded-lg border border-border p-3"
+                  >
                     <div className="mb-2.5 flex items-center justify-between">
                       <div>
                         <div className="text-sm font-bold">{slot.name}</div>
@@ -1428,9 +1463,7 @@ export function AvailabilityTab({
               <FieldLabel>Start date</FieldLabel>
               <DatePicker
                 value={ruleForm.dateRangeStart}
-                onChange={(dateRangeStart) =>
-                  patchRuleForm({ dateRangeStart })
-                }
+                onChange={(dateRangeStart) => patchRuleForm({ dateRangeStart })}
               />
             </Field>
             <Field>
@@ -1614,8 +1647,9 @@ export function AvailabilityTab({
               <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-600" />
                 <p className="text-[11px] text-muted-foreground">
-                  This adjustment affects only timeslots with a finite configured
-                  capacity. It has no numeric effect on timeslots set to Unlimited.
+                  This adjustment affects only timeslots with a finite
+                  configured capacity. It has no numeric effect on timeslots set
+                  to Unlimited.
                 </p>
               </div>
             </div>
