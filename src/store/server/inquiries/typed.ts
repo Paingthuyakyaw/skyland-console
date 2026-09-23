@@ -6,6 +6,7 @@ export type InquiryStatus =
   "NEW" | "IN_PROGRESS" | "QUOTED" | "ACCEPTED" | "DECLINED" | "CLOSED"
 
 export type StaffQuote = {
+  attachment?: { filename: string; contentType: string; sizeBytes: number }
   amount?: number
   currency?: string
   message?: string

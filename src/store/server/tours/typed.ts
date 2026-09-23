@@ -476,7 +476,12 @@ export type AuditLogResponse = {
   createdAt?: string
 }
 
+export type DatePrices = Partial<
+  Record<"adult" | "child" | "infant" | "senior" | "privateTour", number>
+>
+
 export type PricingRuleRequest = {
+  prices?: DatePrices | null
   name: string
   ruleType: PricingRuleType
   startDate?: string

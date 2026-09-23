@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { toast } from "sonner"
 
 import { CustomDialog } from "@/components/custom-dialog"
 import { Button } from "@/components/ui/button"
@@ -10,30 +11,29 @@ import { Textarea } from "@/components/ui/textarea"
 type QuoteDialogProps = {
   open: boolean
   submitting: boolean
+  attachmentRequired?: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (quote: {
     amount: number
     message: string
     expiresAt: string
+    attachment?: File
   }) => void
 }
 
 export function QuoteDialog({
   open,
   submitting,
+  attachmentRequired = false,
   onOpenChange,
   onConfirm,
 }: QuoteDialogProps) {
+  const [attachment, setAttachment] = useState<File | undefined>()
   const [amount, setAmount] = useState("")
   const [message, setMessage] = useState("")
   const [expiry, setExpiry] = useState("")
 
-  useEffect(() => {
-    if (!open) return
-    setAmount("")
-    setMessage("")
-    setExpiry("")
-  }, [open])
+  const [openedAt] = useState(() => Date.now())
 
   const parsedAmount = Number(amount)
   const canSubmit =
@@ -41,7 +41,9 @@ export function QuoteDialog({
     Number.isFinite(parsedAmount) &&
     parsedAmount >= 0 &&
     message.trim().length > 0 &&
-    expiry.trim().length > 0
+    expiry.trim().length > 0 &&
+    new Date(expiry).getTime() > openedAt &&
+    (!attachmentRequired || Boolean(attachment))
 
   return (
     <CustomDialog
@@ -49,7 +51,7 @@ export function QuoteDialog({
       onOpenChange={onOpenChange}
       trigger={null}
       title="Record quote"
-      description="Send a staff quote for this inquiry. This does not take payment or hold capacity."
+      description="Record the prepared quote and supporting document. This does not take payment or hold capacity."
       showDone={false}
       contentClassName="sm:max-w-md"
       footer={
@@ -65,20 +67,43 @@ export function QuoteDialog({
           <Button
             type="button"
             disabled={submitting || !canSubmit}
-            onClick={() =>
+            onClick={() => {
+              if (new Date(expiry).getTime() <= Date.now()) {
+                toast.error("Choose an expiry in the future.")
+                return
+              }
               onConfirm({
                 amount: parsedAmount,
                 message: message.trim(),
                 expiresAt: expiry,
+                attachment,
               })
-            }
+            }}
           >
-            {submitting ? "Sending…" : "Send quote record"}
+            {submitting ? "Recording…" : "Record quote"}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
+        {attachmentRequired ? (
+          <Field>
+            <FieldLabel htmlFor="quote-attachment">
+              Quote attachment (required)
+            </FieldLabel>
+            <Input
+              id="quote-attachment"
+              key={String(open)}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png"
+              disabled={submitting}
+              onChange={(event) => setAttachment(event.target.files?.[0])}
+            />
+            <p className="text-xs text-muted-foreground">
+              PDF, JPEG or PNG. The file will be available in Quote history.
+            </p>
+          </Field>
+        ) : null}
         <Field>
           <FieldLabel>Quote amount (AED)</FieldLabel>
           <Input

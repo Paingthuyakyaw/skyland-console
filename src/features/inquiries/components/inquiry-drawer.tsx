@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils"
 import {
   useAcceptSalesCase,
+  useDownloadQuoteAttachment,
   useCloseSalesCase,
   useDeclineSalesCase,
   useQuoteSalesCase,
@@ -80,6 +81,7 @@ export function InquiryDrawer({
     workflowId ?? "",
     open
   )
+  const downloadAttachment = useDownloadQuoteAttachment()
   const startProcessing = useStartProcessingSalesCase(kind)
   const quoteInquiry = useQuoteSalesCase(kind)
   const acceptInquiry = useAcceptSalesCase(kind)
@@ -125,6 +127,7 @@ export function InquiryDrawer({
     amount: number
     message: string
     expiresAt: string
+    attachment?: File
   }) => {
     if (!data) return
     const version = requireVersion()
@@ -132,6 +135,7 @@ export function InquiryDrawer({
     quoteInquiry.mutate(
       {
         workflowId: data.id,
+        attachment: quote.attachment,
         action: {
           version,
           amount: quote.amount,
@@ -376,6 +380,27 @@ export function InquiryDrawer({
                     <div className="text-xs text-muted-foreground">
                       Expires {formatDateTime(data.staffQuote.expiresAt)}
                     </div>
+                    {kind === "holiday" && data.staffQuote.attachment ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="mt-2 max-w-full"
+                        disabled={downloadAttachment.isPending}
+                        onClick={() =>
+                          downloadAttachment.mutate({
+                            workflowId: data.id,
+                            filename: data.staffQuote!.attachment!.filename,
+                          })
+                        }
+                      >
+                        <span className="truncate">
+                          {downloadAttachment.isPending
+                            ? "Downloading…"
+                            : `Download ${data.staffQuote.attachment.filename}`}
+                        </span>
+                      </Button>
+                    ) : null}
                     {data.staffQuote.message ? (
                       <p className="mt-1 text-sm text-muted-foreground">
                         {data.staffQuote.message}
@@ -449,8 +474,10 @@ export function InquiryDrawer({
       </aside>
 
       <QuoteDialog
+        key={`${workflowId}-${quoteOpen}`}
         open={quoteOpen}
         submitting={quoteInquiry.isPending}
+        attachmentRequired={kind === "holiday"}
         onOpenChange={(nextOpen) => {
           if (!nextOpen && !quoteInquiry.isPending) onQuoteOpenChange(false)
         }}

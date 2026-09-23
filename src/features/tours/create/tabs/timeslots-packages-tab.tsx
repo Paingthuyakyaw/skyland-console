@@ -123,8 +123,8 @@ export function TimeslotsPackagesTab({
             <div>
               <CardTitle>Tour → Timeslot → Timeslot Package</CardTitle>
               <p className="mt-1 text-xs text-muted-foreground">
-                Set standard checkout prices here. Package IDs and advanced
-                pricing are available after the first save.
+                Set default prices here; date overrides take precedence. Package
+                IDs and advanced pricing are available after the first save.
               </p>
             </div>
             <Badge variant="secondary">
@@ -406,7 +406,7 @@ function PackageCard({
               variant="outline"
               onClick={onOpenPricing}
             >
-              Advanced pricing
+              Date & seasonal prices
             </Button>
           ) : null}
         </div>

@@ -122,10 +122,35 @@ export function useQuoteSalesCase(kind: SalesQueue) {
     mutationFn: async ({
       workflowId,
       action,
+      attachment,
     }: {
       workflowId: string
       action: QuoteRequest
+      attachment?: File
     }) => {
+      if (kind === "holiday") {
+        if (!attachment)
+          throw new Error("Attach the quote document before recording it")
+        const body = new FormData()
+        body.append(
+          "quote",
+          new Blob([JSON.stringify(action)], { type: "application/json" })
+        )
+        body.append("attachment", attachment)
+        const { data } = await axios.post<ApiResponse<ProductWorkflow>>(
+          `${SALES_QUEUE_PATH[kind]}/${workflowId}/quote`,
+          body,
+          {
+            transformRequest: [
+              (payload, headers) => {
+                headers.delete("Content-Type")
+                return payload
+              },
+            ],
+          }
+        )
+        return data
+      }
       const { data } = await postWorkflow(kind, workflowId, "quote", action)
       return data
     },
@@ -202,5 +227,35 @@ export function useCloseSalesCase(kind: SalesQueue) {
     onError: (err) => {
       toast.error(apiErrorMessage(err, "Failed to close inquiry"))
     },
+  })
+}
+
+export function useDownloadQuoteAttachment() {
+  return useMutation({
+    mutationFn: async ({
+      workflowId,
+      filename,
+    }: {
+      workflowId: string
+      filename: string
+    }) => {
+      const { data } = await axios.get<Blob>(
+        `holiday-package-quote-requests/${workflowId}/quote/attachment`,
+        {
+          responseType: "blob",
+          headers: { Accept: "application/octet-stream" },
+        }
+      )
+      const url = URL.createObjectURL(data)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    },
+    onError: () =>
+      toast.error("Unable to download the quote attachment. Please try again."),
   })
 }
