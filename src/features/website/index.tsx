@@ -5,6 +5,7 @@ import { BlogTab } from "@/features/website/components/blog-tab"
 import { FaqsTab } from "@/features/website/components/faqs-tab"
 import { PricesTab } from "@/features/website/components/prices-tab"
 import { ReviewsTab } from "@/features/website/components/reviews-tab"
+import { ContactInquiriesTab, SubscriptionsTab } from "@/features/website/components/website-leads-tabs"
 
 const WebsiteFeature = () => {
   return (
@@ -24,6 +25,8 @@ const WebsiteFeature = () => {
           <TabsTrigger value="blog">Blog</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
           <TabsTrigger value="faqs">FAQs</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+          <TabsTrigger value="contact-inquiries">Contact Inquiries</TabsTrigger>
         </TabsList>
 
         <TabsContent value="banners">
@@ -40,6 +43,12 @@ const WebsiteFeature = () => {
         </TabsContent>
         <TabsContent value="faqs">
           <FaqsTab />
+        </TabsContent>
+        <TabsContent value="subscriptions">
+          <SubscriptionsTab />
+        </TabsContent>
+        <TabsContent value="contact-inquiries">
+          <ContactInquiriesTab />
         </TabsContent>
       </Tabs>
     </div>
