@@ -366,6 +366,7 @@ export type CalendarWindowResponse = {
   bookedCount?: number
   remainingCapacity?: number
   price?: number
+  prices?: DatePrices
   confirmedQuantity?: number
   heldQuantity?: number
   reservedQuantity?: number
@@ -403,6 +404,8 @@ export type DateSelection = {
 export type WindowBaselineRequest = {
   timeslotId: string
   maxCapacity?: number
+  price?: number | null
+  prices?: DatePrices | null
   blocked: boolean
 }
 

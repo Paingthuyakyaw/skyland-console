@@ -48,6 +48,7 @@ import type {
   AvailabilityStatus,
   CalendarDayResponse,
   CalendarWindowResponse,
+  DatePrices,
   RuleCategory,
   RuleEffectType,
   RuleRequest,
@@ -68,8 +69,18 @@ type RuleFormState = RuleRequest & {
 type BulkSlotState = {
   unlimited: boolean
   capacity: string
+  prices: Record<keyof DatePrices, string>
   blocked: boolean
 }
+
+const FARE_LABELS: Record<keyof DatePrices, string> = {
+  adult: "Adult",
+  child: "Child",
+  infant: "Infant",
+  senior: "Senior",
+  privateTour: "Private tour total",
+}
+const FARE_KEYS = Object.keys(FARE_LABELS) as (keyof DatePrices)[]
 
 type AvailabilityUi = {
   subTab: AvailabilitySubTab
@@ -325,7 +336,18 @@ function dayStatRows(day: CalendarDayResponse): [string, string][] {
 }
 
 function windowStatRows(window: CalendarWindowResponse): [string, string][] {
+  const fareRows = FARE_KEYS.filter(
+    (fare) => window.prices?.[fare] != null
+  ).map((fare): [string, string] => [
+    FARE_LABELS[fare],
+    `${window.prices![fare]} AED`,
+  ])
   return [
+    ...(fareRows.length
+      ? fareRows
+      : window.price != null
+        ? [["Price", `${window.price} AED`] as [string, string]]
+        : [["Fares", "Package/date rates"] as [string, string]]),
     ["Cap", window.capacity == null ? "∞" : String(window.capacity)],
     [
       "Rem",
@@ -403,7 +425,12 @@ function createAvailabilityUi(): AvailabilityUi {
 }
 
 function defaultBulkSlot(): BulkSlotState {
-  return { unlimited: false, capacity: "", blocked: false }
+  return {
+    unlimited: false,
+    capacity: "",
+    prices: { adult: "", child: "", infant: "", senior: "", privateTour: "" },
+    blocked: false,
+  }
 }
 
 function positiveCapacity(value: string) {
@@ -460,6 +487,17 @@ function bulkInputError(
   })
   if (invalidSlot) {
     return `Enter a positive whole number for ${invalidSlot.name}, or choose Unlimited.`
+  }
+  for (const slot of timeslots) {
+    const invalidFare = FARE_KEYS.find((fare) => {
+      const price = (bulk.slots[slot.id] ?? defaultBulkSlot()).prices[
+        fare
+      ].trim()
+      return price !== "" && !/^\d{1,10}(\.\d{1,2})?$/.test(price)
+    })
+    if (invalidFare) {
+      return `Enter a non-negative ${FARE_LABELS[invalidFare].toLowerCase()} price with up to two decimals for ${slot.name}.`
+    }
   }
   return null
 }
@@ -612,6 +650,11 @@ export function AvailabilityTab({
               timeslotId: slot.id,
               blocked: state.blocked,
               maxCapacity: state.unlimited ? undefined : Number(state.capacity),
+              prices: Object.fromEntries(
+                FARE_KEYS.filter(
+                  (fare) => state.prices[fare].trim() !== ""
+                ).map((fare) => [fare, Number(state.prices[fare])])
+              ) as DatePrices,
             }
           }),
         },
@@ -1244,9 +1287,9 @@ export function AvailabilityTab({
         }
         trigger={null}
         title="Bulk update availability"
-        description="Configure capacity and blocked status across a date range or weekday pattern."
+        description="Configure capacity, status, and fares across a date range or weekday pattern."
         showDone={false}
-        contentClassName="sm:max-w-lg"
+        contentClassName="sm:max-w-2xl"
         footer={
           <>
             <Button type="button" variant="outline" onClick={closeDialog}>
@@ -1272,8 +1315,9 @@ export function AvailabilityTab({
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">
-            This replaces capacity and blocked settings for the selected dates.
-            Set payable prices in the timeslot package Pricing tab.
+            This replaces capacity, blocked status, and calendar fare overrides
+            for the selected dates. Enter only the fares you want to change;
+            blank fares use package or date-rule pricing.
           </p>
           <div className="flex gap-2">
             {(["DATE_RANGE", "WEEKDAY_PATTERN"] as const).map((mode) => (
@@ -1451,6 +1495,32 @@ export function AvailabilityTab({
                         </Field>
                       ) : null}
                     </div>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {FARE_KEYS.map((fare) => (
+                        <Field key={fare}>
+                          <FieldLabel>{FARE_LABELS[fare]} (AED)</FieldLabel>
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            placeholder="Package/date rate"
+                            value={state.prices[fare]}
+                            onChange={(event) =>
+                              patchSlot({
+                                prices: {
+                                  ...state.prices,
+                                  [fare]: event.target.value,
+                                },
+                              })
+                            }
+                          />
+                        </Field>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Leave a fare blank to use its package or date-rule price.
+                      Private tour is one total per booking.
+                    </p>
                   </div>
                 )
               })}
