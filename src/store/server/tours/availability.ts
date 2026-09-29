@@ -220,9 +220,6 @@ export function useBulkUpdateAvailability(tourId?: string) {
       toast.success(response.message || "Availability updated")
       if (tourId) invalidateAvailability(tourId)
     },
-    onError: (err) => {
-      toast.error(apiErrorMessage(err, "Failed to bulk update availability"))
-    },
   })
 }
 

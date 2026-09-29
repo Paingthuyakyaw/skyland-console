@@ -30,6 +30,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+import { apiErrorMessage } from "@/store/server/api-error"
 import {
   useAuditLogs,
   useAvailabilityCalendar,
@@ -395,14 +396,72 @@ function createAvailabilityUi(): AvailabilityUi {
       to: dateKey(year, month, daysInMonth),
       weekdays: ["FRIDAY", "SATURDAY"],
       dayUnlimited: false,
-      dayMax: "60",
+      dayMax: "",
       slots: {},
     },
   }
 }
 
 function defaultBulkSlot(): BulkSlotState {
-  return { unlimited: false, capacity: "20", blocked: false }
+  return { unlimited: false, capacity: "", blocked: false }
+}
+
+function positiveCapacity(value: string) {
+  const number = Number(value)
+  return (
+    value.trim() !== "" &&
+    Number.isInteger(number) &&
+    number > 0 &&
+    number <= 2_147_483_647
+  )
+}
+
+function bulkInputError(
+  bulk: AvailabilityUi["bulk"],
+  timeslots: TimeslotResponse[]
+) {
+  if (!bulk.from || !bulk.to) return "Choose a start and end date."
+  if (bulk.to < bulk.from) return "End date must be on or after start date."
+  const start = new Date(`${bulk.from}T00:00:00Z`)
+  const end = new Date(`${bulk.to}T00:00:00Z`)
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime()) ||
+    start.toISOString().slice(0, 10) !== bulk.from ||
+    end.toISOString().slice(0, 10) !== bulk.to ||
+    end.getTime() - start.getTime() > 366 * 86_400_000
+  ) {
+    return "Choose a valid date range of no more than one year."
+  }
+  if (bulk.mode === "WEEKDAY_PATTERN" && bulk.weekdays.length === 0) {
+    return "Select at least one weekday."
+  }
+  if (bulk.mode === "WEEKDAY_PATTERN") {
+    const days = Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1
+    const hasSelectedDay = Array.from(
+      { length: days },
+      (_, index) =>
+        CALENDAR_WEEKDAYS[
+          new Date(start.getTime() + index * 86_400_000).getUTCDay()
+        ].value
+    ).some((weekday) => bulk.weekdays.includes(weekday))
+    if (!hasSelectedDay) {
+      return "The selected weekdays do not occur in this date range."
+    }
+  }
+  if (timeslots.length === 0)
+    return "Add a timeslot before updating availability."
+  if (!bulk.dayUnlimited && !positiveCapacity(bulk.dayMax)) {
+    return "Enter a positive whole number for daily capacity, or choose Unlimited."
+  }
+  const invalidSlot = timeslots.find((slot) => {
+    const state = bulk.slots[slot.id] ?? defaultBulkSlot()
+    return !state.unlimited && !positiveCapacity(state.capacity)
+  })
+  if (invalidSlot) {
+    return `Enter a positive whole number for ${invalidSlot.name}, or choose Unlimited.`
+  }
+  return null
 }
 
 export function AvailabilityTab({
@@ -416,6 +475,7 @@ export function AvailabilityTab({
   // timeslots cannot be submitted from stale editor state.
   const timeslots = tourDetails.data?.timeslots ?? createdTour?.timeslots ?? []
   const [ui, setUi] = useState(createAvailabilityUi)
+  const [bulkError, setBulkError] = useState("")
   const {
     subTab,
     year,
@@ -497,6 +557,7 @@ export function AvailabilityTab({
   }
 
   const openBulk = () => {
+    setBulkError("")
     setUi((current) => {
       const days = new Date(current.year, current.month + 1, 0).getDate()
       return {
@@ -508,7 +569,7 @@ export function AvailabilityTab({
           from: dateKey(current.year, current.month, 1),
           to: dateKey(current.year, current.month, days),
           dayUnlimited: false,
-          dayMax: "60",
+          dayMax: "",
           slots: Object.fromEntries(
             timeslots.map((slot) => [slot.id, defaultBulkSlot()])
           ),
@@ -517,7 +578,20 @@ export function AvailabilityTab({
     })
   }
 
+  const updateBulk = (
+    change: (current: AvailabilityUi["bulk"]) => AvailabilityUi["bulk"]
+  ) => {
+    setBulkError("")
+    setUi((current) => ({ ...current, bulk: change(current.bulk) }))
+  }
+
   const handleBulk = () => {
+    const inputError = bulkInputError(bulk, timeslots)
+    if (inputError) {
+      setBulkError(inputError)
+      return
+    }
+    setBulkError("")
     bulkUpdate.mutate(
       {
         tourId,
@@ -531,21 +605,27 @@ export function AvailabilityTab({
           },
           maxCapacityForDay: bulk.dayUnlimited
             ? undefined
-            : Number(bulk.dayMax) || undefined,
+            : Number(bulk.dayMax),
           windows: timeslots.map((slot) => {
             const state = bulk.slots[slot.id] ?? defaultBulkSlot()
             return {
               timeslotId: slot.id,
-              blocked: state.blocked || undefined,
-              maxCapacity:
-                state.blocked || state.unlimited
-                  ? undefined
-                  : Number(state.capacity) || undefined,
+              blocked: state.blocked,
+              maxCapacity: state.unlimited ? undefined : Number(state.capacity),
             }
           }),
         },
       },
-      { onSuccess: closeDialog }
+      {
+        onSuccess: closeDialog,
+        onError: (error) =>
+          setBulkError(
+            apiErrorMessage(
+              error,
+              "Could not update availability. Please try again."
+            )
+          ),
+      }
     )
   }
 
@@ -1183,17 +1263,24 @@ export function AvailabilityTab({
         }
       >
         <div className="space-y-4">
+          {bulkError ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              {bulkError}
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            This replaces capacity and blocked settings for the selected dates.
+            Set payable prices in the timeslot package Pricing tab.
+          </p>
           <div className="flex gap-2">
             {(["DATE_RANGE", "WEEKDAY_PATTERN"] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
-                onClick={() =>
-                  setUi((current) => ({
-                    ...current,
-                    bulk: { ...current.bulk, mode },
-                  }))
-                }
+                onClick={() => updateBulk((current) => ({ ...current, mode }))}
                 className={cn(
                   "flex-1 rounded-lg px-4 py-2 text-xs font-bold",
                   bulk.mode === mode
@@ -1206,34 +1293,25 @@ export function AvailabilityTab({
             ))}
           </div>
 
-          {bulk.mode === "DATE_RANGE" ? (
-            <div className="grid grid-cols-2 gap-3">
-              <Field>
-                <FieldLabel>Start date</FieldLabel>
-                <DatePicker
-                  value={bulk.from}
-                  onChange={(from) =>
-                    setUi((current) => ({
-                      ...current,
-                      bulk: { ...current.bulk, from },
-                    }))
-                  }
-                />
-              </Field>
-              <Field>
-                <FieldLabel>End date</FieldLabel>
-                <DatePicker
-                  value={bulk.to}
-                  onChange={(to) =>
-                    setUi((current) => ({
-                      ...current,
-                      bulk: { ...current.bulk, to },
-                    }))
-                  }
-                />
-              </Field>
-            </div>
-          ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <Field>
+              <FieldLabel>Start date</FieldLabel>
+              <DatePicker
+                value={bulk.from}
+                onChange={(from) =>
+                  updateBulk((current) => ({ ...current, from }))
+                }
+              />
+            </Field>
+            <Field>
+              <FieldLabel>End date</FieldLabel>
+              <DatePicker
+                value={bulk.to}
+                onChange={(to) => updateBulk((current) => ({ ...current, to }))}
+              />
+            </Field>
+          </div>
+          {bulk.mode === "WEEKDAY_PATTERN" ? (
             <div>
               <Label>
                 Weekdays{" "}
@@ -1247,16 +1325,13 @@ export function AvailabilityTab({
                     key={day.value}
                     type="button"
                     onClick={() =>
-                      setUi((current) => ({
+                      updateBulk((current) => ({
                         ...current,
-                        bulk: {
-                          ...current.bulk,
-                          weekdays: current.bulk.weekdays.includes(day.value)
-                            ? current.bulk.weekdays.filter(
-                                (item) => item !== day.value
-                              )
-                            : [...current.bulk.weekdays, day.value],
-                        },
+                        weekdays: current.weekdays.includes(day.value)
+                          ? current.weekdays.filter(
+                              (item) => item !== day.value
+                            )
+                          : [...current.weekdays, day.value],
                       }))
                     }
                     className={cn(
@@ -1271,7 +1346,7 @@ export function AvailabilityTab({
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
 
           <div className="space-y-3 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between">
@@ -1286,10 +1361,7 @@ export function AvailabilityTab({
                 <Switch
                   checked={bulk.dayUnlimited}
                   onCheckedChange={(dayUnlimited) =>
-                    setUi((current) => ({
-                      ...current,
-                      bulk: { ...current.bulk, dayUnlimited },
-                    }))
+                    updateBulk((current) => ({ ...current, dayUnlimited }))
                   }
                 />
               </div>
@@ -1300,11 +1372,14 @@ export function AvailabilityTab({
                 <Input
                   type="number"
                   min={1}
+                  max={2147483647}
+                  step={1}
+                  placeholder="e.g. 60"
                   value={bulk.dayMax}
                   onChange={(event) =>
-                    setUi((current) => ({
+                    updateBulk((current) => ({
                       ...current,
-                      bulk: { ...current.bulk, dayMax: event.target.value },
+                      dayMax: event.target.value,
                     }))
                   }
                 />
@@ -1318,16 +1393,13 @@ export function AvailabilityTab({
               {timeslots.map((slot) => {
                 const state = bulk.slots[slot.id] ?? defaultBulkSlot()
                 const patchSlot = (patch: Partial<BulkSlotState>) => {
-                  setUi((current) => ({
+                  updateBulk((current) => ({
                     ...current,
-                    bulk: {
-                      ...current.bulk,
-                      slots: {
-                        ...current.bulk.slots,
-                        [slot.id]: {
-                          ...(current.bulk.slots[slot.id] ?? defaultBulkSlot()),
-                          ...patch,
-                        },
+                    slots: {
+                      ...current.slots,
+                      [slot.id]: {
+                        ...(current.slots[slot.id] ?? defaultBulkSlot()),
+                        ...patch,
                       },
                     },
                   }))
@@ -1352,32 +1424,33 @@ export function AvailabilityTab({
                         />
                       </div>
                     </div>
-                    {!state.blocked ? (
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground">
-                          Unlimited
-                          <Switch
-                            checked={state.unlimited}
-                            onCheckedChange={(unlimited) =>
-                              patchSlot({ unlimited })
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground">
+                        Unlimited
+                        <Switch
+                          checked={state.unlimited}
+                          onCheckedChange={(unlimited) =>
+                            patchSlot({ unlimited })
+                          }
+                        />
+                      </div>
+                      {!state.unlimited ? (
+                        <Field className="flex-1">
+                          <FieldLabel>Max capacity</FieldLabel>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={2147483647}
+                            step={1}
+                            placeholder="e.g. 20"
+                            value={state.capacity}
+                            onChange={(event) =>
+                              patchSlot({ capacity: event.target.value })
                             }
                           />
-                        </div>
-                        {!state.unlimited ? (
-                          <Field className="flex-1">
-                            <FieldLabel>Max capacity</FieldLabel>
-                            <Input
-                              type="number"
-                              min={1}
-                              value={state.capacity}
-                              onChange={(event) =>
-                                patchSlot({ capacity: event.target.value })
-                              }
-                            />
-                          </Field>
-                        ) : null}
-                      </div>
-                    ) : null}
+                        </Field>
+                      ) : null}
+                    </div>
                   </div>
                 )
               })}

@@ -403,8 +403,7 @@ export type DateSelection = {
 export type WindowBaselineRequest = {
   timeslotId: string
   maxCapacity?: number
-  price?: number
-  blocked?: boolean
+  blocked: boolean
 }
 
 export type BulkAvailabilityRequest = {
