@@ -176,11 +176,24 @@ async function savePackagePrice(draft: PriceDraft) {
   })
 }
 
-export async function savePriceDrafts(drafts: PriceDraft[]) {
+export type PriceSaveResult = {
+  saved: PriceDraft[]
+  failed: Array<{ draft: PriceDraft; error: unknown }>
+}
+
+export async function savePriceDrafts(
+  drafts: PriceDraft[]
+): Promise<PriceSaveResult> {
+  const result: PriceSaveResult = { saved: [], failed: [] }
   for (const draft of drafts) {
-    if (draft.type === "Tour") await saveTourPrice(draft)
-    else if (draft.type === "Combo") await saveComboPrice(draft)
-    else await savePackagePrice(draft)
+    try {
+      if (draft.type === "Tour") await saveTourPrice(draft)
+      else if (draft.type === "Combo") await saveComboPrice(draft)
+      else await savePackagePrice(draft)
+      result.saved.push(draft)
+    } catch (error) {
+      result.failed.push({ draft, error })
+    }
   }
 
   await Promise.all([
@@ -188,4 +201,5 @@ export async function savePriceDrafts(drafts: PriceDraft[]) {
     queryClient.invalidateQueries({ queryKey: ["combo-tours"] }),
     queryClient.invalidateQueries({ queryKey: ["holiday-packages"] }),
   ])
+  return result
 }

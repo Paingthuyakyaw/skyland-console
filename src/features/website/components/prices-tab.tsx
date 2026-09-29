@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Check } from "lucide-react"
 import { toast } from "sonner"
 
@@ -52,6 +52,7 @@ const STATUS_CLASS: Record<string, string> = {
 }
 
 function toNumber(value: string) {
+  if (value.trim() === "") return Number.NaN
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : Number.NaN
 }
@@ -62,11 +63,23 @@ function parseSale(value: string) {
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
+function rowValidationError(row: PriceRow) {
+  const price = toNumber(row.priceInput)
+  if (!Number.isFinite(price) || price < 0) return "Enter a valid base price."
+  if (row.saleInput.trim() === "") return null
+  const sale = toNumber(row.saleInput)
+  if (!Number.isFinite(sale) || sale < 0) return "Enter a valid sale price."
+  if (sale > price) return "Sale price cannot exceed the base price."
+  return null
+}
+
 function isDirty(row: PriceRow) {
   const price = toNumber(row.priceInput)
   const sale = parseSale(row.saleInput)
+  if (!Number.isFinite(price)) return true
+  if (row.saleInput.trim() !== "" && sale === undefined) return true
   if (price !== row.price) return true
-  return (sale ?? undefined) !== row.sale
+  return (sale ?? undefined) !== (row.sale ?? undefined)
 }
 
 export function PricesTab() {
@@ -85,8 +98,12 @@ export function PricesTab() {
     isPending: packagesPending,
     isError: packagesError,
   } = useHolidayPackages({ size: 50 })
-  const [rows, setRows] = useState<PriceRow[]>([])
+  const [edits, setEdits] = useState<
+    Record<string, Pick<PriceRow, "priceInput" | "saleInput">>
+  >({})
   const [saving, setSaving] = useState(false)
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
+  const [saveMessage, setSaveMessage] = useState("")
 
   const sourceRows = useMemo<
     Omit<PriceRow, "priceInput" | "saleInput">[]
@@ -121,25 +138,19 @@ export function PricesTab() {
       productId: pkg.id,
     }))
     return [...tours, ...combos, ...packages]
-  }, [
-    combosPage?.content,
-    packagesPage?.content,
-    toursPage?.content,
-  ])
+  }, [combosPage?.content, packagesPage?.content, toursPage?.content])
 
-  const sourceKey = sourceRows
-    .map((row) => `${row.id}:${row.price}:${row.sale ?? ""}`)
-    .join("|")
-
-  useEffect(() => {
-    setRows(
+  const rows = useMemo(
+    () =>
       sourceRows.map((row) => ({
         ...row,
-        priceInput: String(row.price),
-        saleInput: row.sale == null ? "" : String(row.sale),
-      }))
-    )
-  }, [sourceKey, sourceRows])
+        priceInput: edits[row.id]?.priceInput ?? String(row.price),
+        saleInput:
+          edits[row.id]?.saleInput ??
+          (row.sale == null ? "" : String(row.sale)),
+      })),
+    [edits, sourceRows]
+  )
 
   const dirtyRows = rows.filter(isDirty)
   const isPending =
@@ -152,9 +163,27 @@ export function PricesTab() {
     field: "priceInput" | "saleInput",
     value: string
   ) => {
-    setRows((current) =>
-      current.map((row) => (row.id === id ? { ...row, [field]: value } : row))
-    )
+    setRowErrors((current) => {
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setSaveMessage("")
+    const row = rows.find((item) => item.id === id)
+    if (!row) return
+    const nextRow = { ...row, [field]: value }
+    setEdits((current) => {
+      const next = { ...current }
+      if (isDirty(nextRow)) {
+        next[id] = {
+          priceInput: nextRow.priceInput,
+          saleInput: nextRow.saleInput,
+        }
+      } else {
+        delete next[id]
+      }
+      return next
+    })
   }
 
   const handleSave = async () => {
@@ -163,34 +192,64 @@ export function PricesTab() {
       return
     }
 
-    for (const row of dirtyRows) {
-      const price = toNumber(row.priceInput)
-      if (Number.isNaN(price) || price < 0) {
-        toast.error(`Enter a valid price for ${row.name}`)
-        return
-      }
-      if (row.saleInput.trim() !== "") {
-        const sale = toNumber(row.saleInput)
-        if (Number.isNaN(sale) || sale < 0) {
-          toast.error(`Enter a valid sale price for ${row.name}`)
-          return
-        }
-      }
+    const validationErrors = Object.fromEntries(
+      dirtyRows.flatMap((row) => {
+        const error = rowValidationError(row)
+        return error ? [[row.id, error]] : []
+      })
+    )
+    const validRows = dirtyRows.filter((row) => !validationErrors[row.id])
+    if (validRows.length === 0) {
+      setRowErrors(validationErrors)
+      setSaveMessage("Review the highlighted prices and try again.")
+      return
     }
 
     setSaving(true)
+    setRowErrors(validationErrors)
+    setSaveMessage("")
     try {
-      await savePriceDrafts(
-        dirtyRows.map((row) => ({
+      const result = await savePriceDrafts(
+        validRows.map((row) => ({
           type: row.type,
           productId: row.productId,
           price: toNumber(row.priceInput),
           sale: parseSale(row.saleInput),
         }))
       )
-      toast.success("Prices saved")
+      setEdits((current) => {
+        const next = { ...current }
+        for (const draft of result.saved) {
+          delete next[`${draft.type.toLowerCase()}-${draft.productId}`]
+        }
+        return next
+      })
+      const failedCount =
+        Object.keys(validationErrors).length + result.failed.length
+      if (failedCount > 0) {
+        setRowErrors({
+          ...validationErrors,
+          ...Object.fromEntries(
+            result.failed.map(({ draft, error }) => [
+              `${draft.type.toLowerCase()}-${draft.productId}`,
+              apiErrorMessage(error, "Could not save this price. Try again."),
+            ])
+          ),
+        })
+        setSaveMessage(
+          result.saved.length > 0
+            ? `${result.saved.length} price${result.saved.length === 1 ? "" : "s"} saved. ${failedCount} need attention.`
+            : "No prices were saved. Review the highlighted rows."
+        )
+      } else {
+        toast.success(
+          `${result.saved.length} price${result.saved.length === 1 ? "" : "s"} saved`
+        )
+      }
     } catch (error) {
-      toast.error(apiErrorMessage(error, "Failed to save prices"))
+      setSaveMessage(
+        apiErrorMessage(error, "Failed to refresh prices. Please try again.")
+      )
     } finally {
       setSaving(false)
     }
@@ -203,6 +262,14 @@ export function PricesTab() {
         <p className="text-xs text-muted-foreground">
           Fast bulk edits — for deeper changes open the full form in Products.
         </p>
+        {saveMessage && (
+          <p
+            role="alert"
+            className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+          >
+            {saveMessage}
+          </p>
+        )}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px]">
@@ -278,7 +345,18 @@ export function PricesTab() {
                       <Input
                         type="number"
                         min="0"
-                        className="h-9 w-28"
+                        step="0.01"
+                        disabled={saving}
+                        aria-invalid={Boolean(rowErrors[row.id])}
+                        aria-describedby={
+                          rowErrors[row.id]
+                            ? `price-error-${row.id}`
+                            : undefined
+                        }
+                        className={cn(
+                          "h-9 w-28",
+                          rowErrors[row.id] && "border-destructive"
+                        )}
                         value={row.priceInput}
                         onChange={(event) =>
                           patch(row.id, "priceInput", event.target.value)
@@ -289,12 +367,32 @@ export function PricesTab() {
                       <Input
                         type="number"
                         min="0"
-                        className="h-9 w-28"
+                        max={row.priceInput || undefined}
+                        step="0.01"
+                        disabled={saving}
+                        aria-invalid={Boolean(rowErrors[row.id])}
+                        aria-describedby={
+                          rowErrors[row.id]
+                            ? `price-error-${row.id}`
+                            : undefined
+                        }
+                        className={cn(
+                          "h-9 w-28",
+                          rowErrors[row.id] && "border-destructive"
+                        )}
                         value={row.saleInput}
                         onChange={(event) =>
                           patch(row.id, "saleInput", event.target.value)
                         }
                       />
+                      {rowErrors[row.id] && (
+                        <p
+                          id={`price-error-${row.id}`}
+                          className="mt-1 max-w-48 text-xs text-destructive"
+                        >
+                          {rowErrors[row.id]}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge

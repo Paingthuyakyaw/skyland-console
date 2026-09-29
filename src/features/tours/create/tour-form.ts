@@ -413,6 +413,12 @@ export function validateTourForm(form: TourFormState) {
   if (form.discountPrice.trim() && toNumber(form.discountPrice) < 0) {
     add("general", "Discount price cannot be negative")
   }
+  if (
+    form.discountPrice.trim() &&
+    toNumber(form.discountPrice) > toNumber(form.adultPrice)
+  ) {
+    add("general", "Sale price cannot exceed the adult price")
+  }
   if (form.status === "SCHEDULED" && !form.scheduledPublishAt) {
     add(
       "general",
