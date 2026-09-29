@@ -8,13 +8,6 @@ export type PageQuery = DateRange & {
   size: number
 }
 
-export type PromoCodeReport = {
-  couponCode?: string
-  timesRedeemed?: number
-  discountGiven?: number
-  totalBookingAmount?: number
-}
-
 export type RefundCancelReport = {
   bookingRef?: string
   tourName?: string

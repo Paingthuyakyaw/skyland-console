@@ -15,6 +15,7 @@ export function ReportTable({
   totalPages,
   totalElements,
   onPageChange,
+  showPagination = true,
   children,
 }: {
   columns: string[]
@@ -28,6 +29,7 @@ export function ReportTable({
   totalPages: number
   totalElements: number
   onPageChange: (page: number) => void
+  showPagination?: boolean
   children: ReactNode
 }) {
   return (
@@ -66,7 +68,7 @@ export function ReportTable({
           {empty}
         </p>
       ) : null}
-      {!isPending && !isError ? (
+      {!isPending && !isError && showPagination ? (
         <ListPagination
           className="border-t border-border px-4 py-3"
           page={page}

@@ -12,6 +12,7 @@ import type {
   ChangeImpactResponse,
   CopyMonthRequest,
   PageResponse,
+  PackagePricePreview,
   RuleRequest,
   RuleResponse,
   RuleUpdateRequest,
@@ -56,6 +57,22 @@ export function useAvailabilityDay(tourId?: string, date?: string | null) {
   return useQuery({
     queryKey: [...availabilityKey(tourId ?? ""), "day", date],
     queryFn: () => getAvailabilityDay(tourId!, date!),
+    enabled: Boolean(tourId && date),
+  })
+}
+
+export function useAvailabilityPricePreviews(
+  tourId?: string,
+  date?: string | null
+) {
+  return useQuery({
+    queryKey: [...availabilityKey(tourId ?? ""), "price-preview", date],
+    queryFn: async () => {
+      const { data } = await axios.get<ApiResponse<PackagePricePreview[]>>(
+        `tours/${tourId}/availability/calendar/${date}/price-preview`
+      )
+      return data.data ?? []
+    },
     enabled: Boolean(tourId && date),
   })
 }
@@ -319,16 +336,17 @@ export const getAuditLogs = async (params: {
   page?: number
   size?: number
 }) => {
-  const { data } = await axios.get<
-    ApiResponse<PageResponse<AuditLogResponse>>
-  >("audit-logs", {
-    params: {
-      entityType: params.entityType,
-      entityId: params.entityId,
-      page: params.page ?? 0,
-      size: params.size ?? 20,
-    },
-  })
+  const { data } = await axios.get<ApiResponse<PageResponse<AuditLogResponse>>>(
+    "audit-logs",
+    {
+      params: {
+        entityType: params.entityType,
+        entityId: params.entityId,
+        page: params.page ?? 0,
+        size: params.size ?? 20,
+      },
+    }
+  )
   return data.data
 }
 

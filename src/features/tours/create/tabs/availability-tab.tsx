@@ -35,6 +35,7 @@ import {
   useAuditLogs,
   useAvailabilityCalendar,
   useAvailabilityDay,
+  useAvailabilityPricePreviews,
   useAvailabilityRules,
   useBulkUpdateAvailability,
   useCreateAvailabilityRule,
@@ -70,6 +71,7 @@ type BulkSlotState = {
   unlimited: boolean
   capacity: string
   prices: Record<keyof DatePrices, string>
+  groupPrices: Record<string, string>
   blocked: boolean
 }
 
@@ -81,6 +83,10 @@ const FARE_LABELS: Record<keyof DatePrices, string> = {
   privateTour: "Private tour total",
 }
 const FARE_KEYS = Object.keys(FARE_LABELS) as (keyof DatePrices)[]
+
+function groupTierKey(packageId: string, minPax: number) {
+  return `${packageId}:${minPax}`
+}
 
 type AvailabilityUi = {
   subTab: AvailabilitySubTab
@@ -429,6 +435,7 @@ function defaultBulkSlot(): BulkSlotState {
     unlimited: false,
     capacity: "",
     prices: { adult: "", child: "", infant: "", senior: "", privateTour: "" },
+    groupPrices: {},
     blocked: false,
   }
 }
@@ -498,6 +505,17 @@ function bulkInputError(
     if (invalidFare) {
       return `Enter a non-negative ${FARE_LABELS[invalidFare].toLowerCase()} price with up to two decimals for ${slot.name}.`
     }
+    for (const pkg of slot.packages ?? []) {
+      for (const tier of pkg.groupPriceTiers ?? []) {
+        const price =
+          (bulk.slots[slot.id] ?? defaultBulkSlot()).groupPrices[
+            groupTierKey(pkg.id, tier.minPax)
+          ]?.trim() ?? ""
+        if (price !== "" && !/^\d{1,10}(\.\d{1,2})?$/.test(price)) {
+          return `Enter a non-negative group price with up to two decimals for ${pkg.name} (${tier.minPax}+ guests).`
+        }
+      }
+    }
   }
   return null
 }
@@ -530,6 +548,7 @@ export function AvailabilityTab({
 
   const calendar = useAvailabilityCalendar(tourId, currentMonth)
   const dayDetail = useAvailabilityDay(tourId, selectedDate)
+  const pricePreviews = useAvailabilityPricePreviews(tourId, selectedDate)
   const rulesQuery = useAvailabilityRules(tourId)
   const audit = useAuditLogs({
     entityType: "TOUR",
@@ -655,6 +674,21 @@ export function AvailabilityTab({
                   (fare) => state.prices[fare].trim() !== ""
                 ).map((fare) => [fare, Number(state.prices[fare])])
               ) as DatePrices,
+              groupPrices: (slot.packages ?? []).flatMap((pkg) =>
+                (pkg.groupPriceTiers ?? []).flatMap((tier) => {
+                  const value =
+                    state.groupPrices[groupTierKey(pkg.id, tier.minPax)]?.trim()
+                  return value
+                    ? [
+                        {
+                          timeslotPackageId: pkg.id,
+                          minPax: tier.minPax,
+                          pricePerPax: Number(value),
+                        },
+                      ]
+                    : []
+                })
+              ),
             }
           }),
         },
@@ -1084,6 +1118,79 @@ export function AvailabilityTab({
                                     </div>
                                   )
                                 )}
+                              </div>
+                              <div className="mt-3 space-y-2 border-t border-border pt-3">
+                                <div className="text-[11px] font-bold text-muted-foreground">
+                                  Effective package prices for this date (AED)
+                                </div>
+                                {pricePreviews.isPending ? (
+                                  <p className="text-xs text-muted-foreground">
+                                    Loading prices…
+                                  </p>
+                                ) : pricePreviews.isError ? (
+                                  <p className="text-xs text-destructive">
+                                    Could not load date prices.
+                                  </p>
+                                ) : (
+                                  pricePreviews.data
+                                    ?.filter(
+                                      (preview) =>
+                                        preview.timeslotId === window.timeslotId
+                                    )
+                                    .map((preview) => (
+                                      <div
+                                        key={preview.timeslotPackageId}
+                                        className="rounded-md bg-muted/30 p-2 text-xs"
+                                      >
+                                        <div className="font-bold">
+                                          {timeslots
+                                            .find(
+                                              (slot) =>
+                                                slot.id === preview.timeslotId
+                                            )
+                                            ?.packages?.find(
+                                              (pkg) =>
+                                                pkg.id ===
+                                                preview.timeslotPackageId
+                                            )?.name ?? "Package"}
+                                        </div>
+                                        <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-1">
+                                          {FARE_KEYS.filter(
+                                            (fare) =>
+                                              preview.prices[fare] != null
+                                          ).map((fare) => (
+                                            <div
+                                              key={fare}
+                                              className="flex justify-between gap-2"
+                                            >
+                                              <span>{FARE_LABELS[fare]}</span>
+                                              <strong>
+                                                {preview.prices[fare]} AED
+                                              </strong>
+                                            </div>
+                                          ))}
+                                          {preview.groupPrices.map((group) => (
+                                            <div
+                                              key={group.minPax}
+                                              className="flex justify-between gap-2"
+                                            >
+                                              <span>
+                                                Adult, {group.minPax}+ guests
+                                              </span>
+                                              <strong>
+                                                {group.adultPricePerPax} AED
+                                              </strong>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))
+                                )}
+                                <p className="text-[11px] text-muted-foreground">
+                                  Guest fares are per person; private tour is a
+                                  flat booking price. Group previews use the
+                                  shown adult guest count.
+                                </p>
                               </div>
                               {window.unavailabilityReason ? (
                                 <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -1521,6 +1628,60 @@ export function AvailabilityTab({
                       Leave a fare blank to use its package or date-rule price.
                       Private tour is one total per booking.
                     </p>
+                    {(slot.packages ?? []).some(
+                      (pkg) => pkg.groupPriceTiers?.length
+                    ) ? (
+                      <div className="mt-3 space-y-3 border-t border-border pt-3">
+                        <p className="text-xs font-bold">
+                          Group tier prices by package (AED per adult)
+                        </p>
+                        {(slot.packages ?? [])
+                          .filter((pkg) => pkg.groupPriceTiers?.length)
+                          .map((pkg) => (
+                            <div
+                              key={pkg.id}
+                              className="rounded-md bg-muted/30 p-2"
+                            >
+                              <p className="mb-2 text-xs font-semibold">
+                                {pkg.name}
+                              </p>
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                {pkg.groupPriceTiers.map((tier) => {
+                                  const key = groupTierKey(pkg.id, tier.minPax)
+                                  return (
+                                    <Field key={key}>
+                                      <FieldLabel>
+                                        {tier.minPax}+ guests · package{" "}
+                                        {tier.pricePerPax} AED
+                                      </FieldLabel>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        step={0.01}
+                                        placeholder="Package/date rate"
+                                        value={state.groupPrices[key] ?? ""}
+                                        onChange={(event) =>
+                                          patchSlot({
+                                            groupPrices: {
+                                              ...state.groupPrices,
+                                              [key]: event.target.value,
+                                            },
+                                          })
+                                        }
+                                      />
+                                    </Field>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        <p className="text-xs text-muted-foreground">
+                          Leave a group tier blank to use its package or
+                          date-rule price. An entered guest fare takes
+                          precedence for that fare type.
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 )
               })}

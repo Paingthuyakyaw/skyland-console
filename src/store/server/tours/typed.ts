@@ -367,6 +367,7 @@ export type CalendarWindowResponse = {
   remainingCapacity?: number
   price?: number
   prices?: DatePrices
+  groupPrices?: GroupPriceOverrideResponse[]
   confirmedQuantity?: number
   heldQuantity?: number
   reservedQuantity?: number
@@ -406,7 +407,23 @@ export type WindowBaselineRequest = {
   maxCapacity?: number
   price?: number | null
   prices?: DatePrices | null
+  groupPrices?: GroupPriceOverrideRequest[]
   blocked: boolean
+}
+
+export type GroupPriceOverrideRequest = {
+  timeslotPackageId: string
+  minPax: number
+  pricePerPax: number
+}
+
+export type GroupPriceOverrideResponse = GroupPriceOverrideRequest
+
+export type PackagePricePreview = {
+  timeslotId: string
+  timeslotPackageId: string
+  prices: DatePrices
+  groupPrices: Array<{ minPax: number; adultPricePerPax: number }>
 }
 
 export type BulkAvailabilityRequest = {

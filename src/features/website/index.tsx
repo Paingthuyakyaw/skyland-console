@@ -3,15 +3,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BannersTab } from "@/features/website/components/banners-tab"
 import { BlogTab } from "@/features/website/components/blog-tab"
 import { FaqsTab } from "@/features/website/components/faqs-tab"
-import { PricesTab } from "@/features/website/components/prices-tab"
 import { ReviewsTab } from "@/features/website/components/reviews-tab"
-import { ContactInquiriesTab, SubscriptionsTab } from "@/features/website/components/website-leads-tabs"
+import {
+  ContactInquiriesTab,
+  SubscriptionsTab,
+} from "@/features/website/components/website-leads-tabs"
 
 const WebsiteFeature = () => {
   const requestedTab = new URLSearchParams(window.location.search).get("tab")
-  const initialTab = requestedTab === "subscriptions" || requestedTab === "contact-inquiries"
-    ? requestedTab
-    : "banners"
+  const initialTab =
+    requestedTab === "subscriptions" || requestedTab === "contact-inquiries"
+      ? requestedTab
+      : "banners"
   return (
     <div>
       <PagePlaceholder
@@ -25,7 +28,6 @@ const WebsiteFeature = () => {
           className="h-auto w-full flex-wrap justify-start border-b border-border"
         >
           <TabsTrigger value="banners">Banners</TabsTrigger>
-          <TabsTrigger value="prices">Quick Price Edit</TabsTrigger>
           <TabsTrigger value="blog">Blog</TabsTrigger>
           <TabsTrigger value="reviews">Reviews</TabsTrigger>
           <TabsTrigger value="faqs">FAQs</TabsTrigger>
@@ -35,9 +37,6 @@ const WebsiteFeature = () => {
 
         <TabsContent value="banners">
           <BannersTab />
-        </TabsContent>
-        <TabsContent value="prices">
-          <PricesTab />
         </TabsContent>
         <TabsContent value="blog">
           <BlogTab />

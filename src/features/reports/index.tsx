@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { PagePlaceholder } from "@/components/page-placeholder"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -8,19 +8,22 @@ import {
   defaultPaymentRange,
   formatDateTime,
   formatLabel,
+  formatMonth,
   formatMoney,
   isValidRange,
 } from "@/features/payments/components/utils"
 import {
-  useDeposits,
+  useMonthlyRevenue,
+  usePaymentMethods,
+} from "@/store/server/payments/payments"
+import {
   usePayOnArrival,
-  usePromoCodes,
   useRefundsCancellations,
 } from "@/store/server/reports/reports"
 
 const PAGE_SIZE = 20
 
-type ReportTab = "promo" | "refunds" | "arrival" | "deposits"
+type ReportTab = "revenue" | "methods" | "refunds" | "arrival"
 
 function cell(value?: string | number) {
   if (value === undefined || value === null || value === "") return "—"
@@ -31,35 +34,37 @@ const ReportsFeature = () => {
   const initial = defaultPaymentRange()
   const [from, setFrom] = useState(initial.from)
   const [to, setTo] = useState(initial.to)
-  const [tab, setTab] = useState<ReportTab>("promo")
+  const [tab, setTab] = useState<ReportTab>("revenue")
   const [page, setPage] = useState(0)
   const enabled = isValidRange(from, to)
   const query = { from, to, page, size: PAGE_SIZE }
-  const promo = usePromoCodes(query, enabled && tab === "promo")
+  const revenue = useMonthlyRevenue({ from, to }, enabled && tab === "revenue")
+  const methods = usePaymentMethods({ from, to }, enabled && tab === "methods")
   const refunds = useRefundsCancellations(query, enabled && tab === "refunds")
   const arrival = usePayOnArrival(query, enabled && tab === "arrival")
-  const deposits = useDeposits(query, enabled && tab === "deposits")
-
-  useEffect(() => {
-    setPage(0)
-  }, [from, to, tab])
 
   return (
     <div>
       <PagePlaceholder
         title="Reports"
-        subtitle="Commercial, operational and financial reporting with export-ready detail."
+        subtitle="Review revenue, payment methods, refunds, and outstanding arrival payments."
         actions={
           <>
             <DatePicker
               value={from}
-              onChange={setFrom}
+              onChange={(value) => {
+                setFrom(value)
+                setPage(0)
+              }}
               aria-label="From date"
               className="w-40"
             />
             <DatePicker
               value={to}
-              onChange={setTo}
+              onChange={(value) => {
+                setTo(value)
+                setPage(0)
+              }}
               aria-label="To date"
               className="w-40"
             />
@@ -77,12 +82,13 @@ const ReportsFeature = () => {
         value={tab}
         onValueChange={(value) => {
           if (
-            value === "promo" ||
+            value === "revenue" ||
+            value === "methods" ||
             value === "refunds" ||
-            value === "arrival" ||
-            value === "deposits"
+            value === "arrival"
           ) {
             setTab(value)
+            setPage(0)
           }
         }}
         className="gap-4"
@@ -91,42 +97,62 @@ const ReportsFeature = () => {
           variant="line"
           className="w-full justify-start border-b border-border"
         >
-          <TabsTrigger value="promo">Promo codes</TabsTrigger>
+          <TabsTrigger value="revenue">Monthly revenue</TabsTrigger>
+          <TabsTrigger value="methods">Payment methods</TabsTrigger>
           <TabsTrigger value="refunds">Refunds & cancellations</TabsTrigger>
           <TabsTrigger value="arrival">Pay on arrival</TabsTrigger>
-          <TabsTrigger value="deposits">Deposits</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="promo">
+        <TabsContent value="revenue">
           <ReportTable
-            columns={[
-              "Coupon",
-              "Times redeemed",
-              "Discount given",
-              "Booking amount",
-            ]}
-            isPending={enabled && promo.isPending}
-            isError={promo.isError}
-            isEmpty={(promo.data?.content.length ?? 0) === 0}
-            error="Promo code report could not be loaded."
-            empty="No promo code redemptions in this date range."
-            page={page}
-            pageSize={PAGE_SIZE}
-            totalPages={promo.data?.totalPages ?? 0}
-            totalElements={promo.data?.totalElements ?? 0}
+            columns={["Month", "Collected revenue"]}
+            isPending={enabled && revenue.isPending}
+            isError={revenue.isError}
+            isEmpty={(revenue.data?.length ?? 0) === 0}
+            error="Monthly revenue could not be loaded."
+            empty="No collected revenue in this date range."
+            page={0}
+            pageSize={Math.max(revenue.data?.length ?? 0, 1)}
+            totalPages={1}
+            totalElements={revenue.data?.length ?? 0}
             onPageChange={setPage}
+            showPagination={false}
           >
-            {promo.data?.content.map((row) => (
-              <tr key={row.couponCode} className="border-t border-border">
+            {revenue.data?.map((row) => (
+              <tr key={row.month} className="border-t border-border">
                 <td className="px-5 py-3 font-bold text-primary">
-                  {cell(row.couponCode)}
-                </td>
-                <td className="px-5 py-3">{cell(row.timesRedeemed)}</td>
-                <td className="px-5 py-3 font-bold">
-                  {formatMoney(row.discountGiven)}
+                  {formatMonth(row.month)} {row.month.slice(0, 4)}
                 </td>
                 <td className="px-5 py-3 font-bold">
-                  {formatMoney(row.totalBookingAmount)}
+                  {formatMoney(row.amount)}
+                </td>
+              </tr>
+            ))}
+          </ReportTable>
+        </TabsContent>
+
+        <TabsContent value="methods">
+          <ReportTable
+            columns={["Payment method", "Collected amount"]}
+            isPending={enabled && methods.isPending}
+            isError={methods.isError}
+            isEmpty={(methods.data?.length ?? 0) === 0}
+            error="Payment methods could not be loaded."
+            empty="No payment methods in this date range."
+            page={0}
+            pageSize={Math.max(methods.data?.length ?? 0, 1)}
+            totalPages={1}
+            totalElements={methods.data?.length ?? 0}
+            onPageChange={setPage}
+            showPagination={false}
+          >
+            {methods.data?.map((row) => (
+              <tr key={row.name} className="border-t border-border">
+                <td className="px-5 py-3 font-bold text-primary">
+                  {formatLabel(row.name)}
+                </td>
+                <td className="px-5 py-3 font-bold">
+                  {formatMoney(row.amount)}
                 </td>
               </tr>
             ))}
@@ -179,20 +205,6 @@ const ReportsFeature = () => {
             page={page}
             totalPages={arrival.data?.totalPages ?? 0}
             totalElements={arrival.data?.totalElements ?? 0}
-            onPageChange={setPage}
-          />
-        </TabsContent>
-
-        <TabsContent value="deposits">
-          <OutstandingTable
-            rows={deposits.data?.content ?? []}
-            isPending={enabled && deposits.isPending}
-            isError={deposits.isError}
-            error="Deposits report could not be loaded."
-            empty="No deposit balances in this date range."
-            page={page}
-            totalPages={deposits.data?.totalPages ?? 0}
-            totalElements={deposits.data?.totalElements ?? 0}
             onPageChange={setPage}
           />
         </TabsContent>
