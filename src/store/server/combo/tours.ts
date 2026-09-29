@@ -45,11 +45,15 @@ export const getComboTours = async (params: ComboToursQueryParams = {}) => {
   return data.data
 }
 
-export const useComboTours = (params: ComboToursQueryParams = {}) => {
+export const useComboTours = (
+  params: ComboToursQueryParams = {},
+  enabled = true
+) => {
   return useQuery({
     queryKey: [...COMBO_TOURS_KEY, params],
     queryFn: () => getComboTours(params),
     placeholderData: keepPreviousData,
+    enabled,
   })
 }
 

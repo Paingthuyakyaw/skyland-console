@@ -17,6 +17,7 @@ import { apiErrorMessage } from "@/store/server/api-error"
 import { useComboTours } from "@/store/server/combo/tours"
 import { useHolidayPackages } from "@/store/server/holiday/packages"
 import { useTours } from "@/store/server/tours/tours"
+import { COMBO_TOURS_ENABLED } from "@/lib/feature-flags"
 import { cn } from "@/lib/utils"
 
 type PriceRow = {
@@ -78,7 +79,7 @@ export function PricesTab() {
     data: combosPage,
     isPending: combosPending,
     isError: combosError,
-  } = useComboTours({ size: 50 })
+  } = useComboTours({ size: 50 }, COMBO_TOURS_ENABLED)
   const {
     data: packagesPage,
     isPending: packagesPending,
@@ -99,15 +100,17 @@ export function PricesTab() {
       status: tourStatusLabel(tour.status, tour.statusLabel),
       productId: tour.id,
     }))
-    const combos = (combosPage?.content ?? []).map((tour) => ({
-      id: `combo-${tour.id}`,
-      name: tour.title,
-      type: "Combo" as const,
-      price: tour.comboPrice,
-      sale: tour.discountPrice,
-      status: comboStatusLabel(tour.status),
-      productId: tour.id,
-    }))
+    const combos = COMBO_TOURS_ENABLED
+      ? (combosPage?.content ?? []).map((tour) => ({
+          id: `combo-${tour.id}`,
+          name: tour.title,
+          type: "Combo" as const,
+          price: tour.comboPrice,
+          sale: tour.discountPrice,
+          status: comboStatusLabel(tour.status),
+          productId: tour.id,
+        }))
+      : []
     const packages = (packagesPage?.content ?? []).map((pkg) => ({
       id: `package-${pkg.id}`,
       name: pkg.title,
@@ -118,7 +121,11 @@ export function PricesTab() {
       productId: pkg.id,
     }))
     return [...tours, ...combos, ...packages]
-  }, [combosPage?.content, packagesPage?.content, toursPage?.content])
+  }, [
+    combosPage?.content,
+    packagesPage?.content,
+    toursPage?.content,
+  ])
 
   const sourceKey = sourceRows
     .map((row) => `${row.id}:${row.price}:${row.sale ?? ""}`)
@@ -135,8 +142,10 @@ export function PricesTab() {
   }, [sourceKey, sourceRows])
 
   const dirtyRows = rows.filter(isDirty)
-  const isPending = toursPending || combosPending || packagesPending
-  const isError = toursError || combosError || packagesError
+  const isPending =
+    toursPending || (COMBO_TOURS_ENABLED && combosPending) || packagesPending
+  const isError =
+    toursError || (COMBO_TOURS_ENABLED && combosError) || packagesError
 
   const patch = (
     id: string,

@@ -80,8 +80,8 @@ const ToursFeature = () => {
   return (
     <div>
       <PagePlaceholder
-        title="Tours, Combos & Packages"
-        subtitle="Tours are the foundational entity. Combos and Packages are lightweight bundles of existing tours."
+        title="Tours & Packages"
+        subtitle="Tours are the foundational entity. Holiday packages bundle existing tours."
         actions={
           <>
             <ManageCategoriesDialog
