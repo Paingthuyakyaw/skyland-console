@@ -8,6 +8,10 @@ import { ReviewsTab } from "@/features/website/components/reviews-tab"
 import { ContactInquiriesTab, SubscriptionsTab } from "@/features/website/components/website-leads-tabs"
 
 const WebsiteFeature = () => {
+  const requestedTab = new URLSearchParams(window.location.search).get("tab")
+  const initialTab = requestedTab === "subscriptions" || requestedTab === "contact-inquiries"
+    ? requestedTab
+    : "banners"
   return (
     <div>
       <PagePlaceholder
@@ -15,7 +19,7 @@ const WebsiteFeature = () => {
         subtitle="Manage everything that appears on the public Skyland website."
       />
 
-      <Tabs defaultValue="banners" className="gap-4">
+      <Tabs defaultValue={initialTab} className="gap-4">
         <TabsList
           variant="line"
           className="h-auto w-full flex-wrap justify-start border-b border-border"

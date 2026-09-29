@@ -42,7 +42,7 @@ const InquiriesFeature = ({ kind }: { kind: SalesQueue }) => {
     search: "",
     status: "all",
     page: 0,
-    openId: null,
+    openId: new URLSearchParams(window.location.search).get("workflow"),
     quoteOpen: false,
     resolution: null,
   })

@@ -95,6 +95,9 @@ export const NotificationsTab = forwardRef<SettingsTabHandle>(
     return (
       <div className="space-y-4">
         <h3 className="font-bold text-foreground">Notification Settings</h3>
+        <p className="text-sm text-muted-foreground">
+          These channel preferences are separate from the console notification bell.
+        </p>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-xs font-bold text-muted-foreground uppercase">

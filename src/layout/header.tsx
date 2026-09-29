@@ -11,17 +11,19 @@ import {
   User,
 } from "lucide-react"
 import { Link } from "@tanstack/react-router"
+import { formatDistanceToNow } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { getLocale, LOCALES } from "@/lib/locales"
 import { useLogout } from "@/hooks/use-logout"
 import { useBoundStore } from "@/store/client/use-store"
-
-const NOTIFICATIONS = [
-  ["New booking SKY-24815", "Amelia Hartwell · Evening Desert Safari", "2m"],
-  ["Payment received", "AED 1,720 from David Chen", "1h"],
-  ["Booking cancelled", "SKY-24788 · refund issued", "3h"],
-] as const
+import {
+  notificationDestination,
+  notificationTitle,
+  useAdminNotifications,
+  useMarkNotificationRead,
+  useUnreadNotificationCount,
+} from "@/store/server/notifications/notifications"
 
 type AppHeaderProps = {
   collapsed: boolean
@@ -36,11 +38,15 @@ export function AppHeader({
 }: AppHeaderProps) {
   const logout = useLogout()
   const locale = useBoundStore((state) => state.locale)
+  const token = useBoundStore((state) => state.token)
   const setLocale = useBoundStore((state) => state.setLocale)
   const lang = getLocale(locale)
   const [notifOpen, setNotifOpen] = React.useState(false)
   const [userOpen, setUserOpen] = React.useState(false)
   const [langOpen, setLangOpen] = React.useState(false)
+  const notifications = useAdminNotifications(Boolean(token))
+  const unreadCount = useUnreadNotificationCount(Boolean(token))
+  const markRead = useMarkNotificationRead()
 
   return (
     <header className="z-20 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card/80 px-4 backdrop-blur sm:px-6">
@@ -124,6 +130,8 @@ export function AppHeader({
             type="button"
             onClick={() => {
               setNotifOpen((value) => !value)
+              void notifications.refetch()
+              void unreadCount.refetch()
               setUserOpen(false)
               setLangOpen(false)
             }}
@@ -131,33 +139,55 @@ export function AppHeader({
             aria-label="Notifications"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-status-cancelled ring-2 ring-card" />
+            {(unreadCount.data ?? 0) > 0 && (
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-status-cancelled ring-2 ring-card" />
+            )}
           </button>
           {notifOpen && (
-            <div className="absolute right-0 mt-2 w-80 rounded-card border border-border bg-card p-2 shadow-xl">
+            <div className="absolute right-0 z-50 mt-2 w-80 rounded-card border border-border bg-card p-2 shadow-xl">
               <div className="flex items-center justify-between px-2 py-1.5">
                 <span className="text-sm font-bold">Notifications</span>
-                <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-bold text-primary">
-                  3 new
-                </span>
+                {(unreadCount.data ?? 0) > 0 && (
+                  <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-bold text-primary">
+                    {unreadCount.data} unread
+                  </span>
+                )}
               </div>
-              {NOTIFICATIONS.map(([title, subtitle, when], index) => (
-                <div
-                  key={index}
-                  className="flex gap-3 rounded-lg px-2 py-2 hover:bg-muted"
-                >
-                  <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-bold text-foreground">
-                      {title}
-                    </div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {subtitle}
-                    </div>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{when}</span>
-                </div>
-              ))}
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.isPending && <p className="px-2 py-5 text-center text-xs text-muted-foreground">Loading notifications…</p>}
+                {notifications.isError && <p className="px-2 py-5 text-center text-xs text-destructive">Unable to load notifications.</p>}
+                {notifications.data?.content.length === 0 && <p className="px-2 py-5 text-center text-xs text-muted-foreground">No notifications yet.</p>}
+                {notifications.data?.content.map((item) => (
+                  <a
+                    key={item.id}
+                    href={notificationDestination(item)}
+                    className="flex gap-3 rounded-lg px-2 py-2 hover:bg-muted"
+                    onClick={(event) => {
+                      if (item.read) return
+                      event.preventDefault()
+                      void markRead.mutateAsync(item.id)
+                        .catch(() => undefined)
+                        .finally(() => window.location.assign(notificationDestination(item)))
+                    }}
+                  >
+                    <span className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-primary")} />
+                    <span className="min-w-0 flex-1">
+                      <span className={cn("block text-[13px] text-foreground", !item.read && "font-bold")}>{notificationTitle(item.eventType)}</span>
+                      <span className="block text-xs text-muted-foreground">Open details</span>
+                    </span>
+                    <time className="text-xs whitespace-nowrap text-muted-foreground" dateTime={item.createdAt}>
+                      {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                    </time>
+                  </a>
+                ))}
+              </div>
+              <Link
+                to="/notifications"
+                className="block border-t border-border px-2 py-2 text-center text-xs font-semibold text-primary hover:bg-muted"
+                onClick={() => setNotifOpen(false)}
+              >
+                View all notifications
+              </Link>
             </div>
           )}
         </div>

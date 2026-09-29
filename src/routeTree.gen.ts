@@ -24,6 +24,7 @@ import { Route as AuthenticatedHolidayPackagesIdRouteImport } from "./routes/_au
 import { Route as AuthenticatedHolidayPackagesNewRouteImport } from "./routes/_authenticated/holiday-packages/new"
 import { Route as AuthenticatedHolidayQuotesIndexRouteImport } from "./routes/_authenticated/holiday-quotes/index"
 import { Route as AuthenticatedInquiriesIndexRouteImport } from "./routes/_authenticated/inquiries/index"
+import { Route as AuthenticatedNotificationsIndexRouteImport } from "./routes/_authenticated/notifications/index"
 import { Route as AuthenticatedPaymentsIndexRouteImport } from "./routes/_authenticated/payments/index"
 import { Route as AuthenticatedPromotionsIndexRouteImport } from "./routes/_authenticated/promotions/index"
 import { Route as AuthenticatedPromotionsIdRouteImport } from "./routes/_authenticated/promotions/$id"
@@ -124,6 +125,12 @@ const AuthenticatedInquiriesIndexRoute =
     path: "/inquiries/",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNotificationsIndexRoute =
+  AuthenticatedNotificationsIndexRouteImport.update({
+    id: "/notifications/",
+    path: "/notifications/",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPaymentsIndexRoute =
   AuthenticatedPaymentsIndexRouteImport.update({
     id: "/payments/",
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   "/holiday-packages/": typeof AuthenticatedHolidayPackagesIndexRoute
   "/holiday-quotes/": typeof AuthenticatedHolidayQuotesIndexRoute
   "/inquiries/": typeof AuthenticatedInquiriesIndexRoute
+  "/notifications/": typeof AuthenticatedNotificationsIndexRoute
   "/payments/": typeof AuthenticatedPaymentsIndexRoute
   "/promotions/": typeof AuthenticatedPromotionsIndexRoute
   "/reports/": typeof AuthenticatedReportsIndexRoute
@@ -248,6 +256,7 @@ export interface FileRoutesByTo {
   "/holiday-packages": typeof AuthenticatedHolidayPackagesIndexRoute
   "/holiday-quotes": typeof AuthenticatedHolidayQuotesIndexRoute
   "/inquiries": typeof AuthenticatedInquiriesIndexRoute
+  "/notifications": typeof AuthenticatedNotificationsIndexRoute
   "/payments": typeof AuthenticatedPaymentsIndexRoute
   "/promotions": typeof AuthenticatedPromotionsIndexRoute
   "/reports": typeof AuthenticatedReportsIndexRoute
@@ -279,6 +288,7 @@ export interface FileRoutesById {
   "/_authenticated/holiday-packages/": typeof AuthenticatedHolidayPackagesIndexRoute
   "/_authenticated/holiday-quotes/": typeof AuthenticatedHolidayQuotesIndexRoute
   "/_authenticated/inquiries/": typeof AuthenticatedInquiriesIndexRoute
+  "/_authenticated/notifications/": typeof AuthenticatedNotificationsIndexRoute
   "/_authenticated/payments/": typeof AuthenticatedPaymentsIndexRoute
   "/_authenticated/promotions/": typeof AuthenticatedPromotionsIndexRoute
   "/_authenticated/reports/": typeof AuthenticatedReportsIndexRoute
@@ -310,6 +320,7 @@ export interface FileRouteTypes {
     | "/holiday-packages/"
     | "/holiday-quotes/"
     | "/inquiries/"
+    | "/notifications/"
     | "/payments/"
     | "/promotions/"
     | "/reports/"
@@ -339,6 +350,7 @@ export interface FileRouteTypes {
     | "/holiday-packages"
     | "/holiday-quotes"
     | "/inquiries"
+    | "/notifications"
     | "/payments"
     | "/promotions"
     | "/reports"
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | "/_authenticated/holiday-packages/"
     | "/_authenticated/holiday-quotes/"
     | "/_authenticated/inquiries/"
+    | "/_authenticated/notifications/"
     | "/_authenticated/payments/"
     | "/_authenticated/promotions/"
     | "/_authenticated/reports/"
@@ -490,6 +503,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedInquiriesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/notifications/": {
+      id: "/_authenticated/notifications/"
+      path: "/notifications"
+      fullPath: "/notifications/"
+      preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/payments/": {
       id: "/_authenticated/payments/"
       path: "/payments"
@@ -604,6 +624,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHolidayPackagesIndexRoute: typeof AuthenticatedHolidayPackagesIndexRoute
   AuthenticatedHolidayQuotesIndexRoute: typeof AuthenticatedHolidayQuotesIndexRoute
   AuthenticatedInquiriesIndexRoute: typeof AuthenticatedInquiriesIndexRoute
+  AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
   AuthenticatedPaymentsIndexRoute: typeof AuthenticatedPaymentsIndexRoute
   AuthenticatedPromotionsIndexRoute: typeof AuthenticatedPromotionsIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
@@ -634,6 +655,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedHolidayPackagesIndexRoute,
   AuthenticatedHolidayQuotesIndexRoute: AuthenticatedHolidayQuotesIndexRoute,
   AuthenticatedInquiriesIndexRoute: AuthenticatedInquiriesIndexRoute,
+  AuthenticatedNotificationsIndexRoute: AuthenticatedNotificationsIndexRoute,
   AuthenticatedPaymentsIndexRoute: AuthenticatedPaymentsIndexRoute,
   AuthenticatedPromotionsIndexRoute: AuthenticatedPromotionsIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,

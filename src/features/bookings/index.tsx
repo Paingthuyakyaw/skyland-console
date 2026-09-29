@@ -61,7 +61,7 @@ const BookingFeature = () => {
     travelFrom: "",
     travelTo: "",
     page: 0,
-    openId: null,
+    openId: new URLSearchParams(window.location.search).get("booking"),
     action: null,
   })
   const debouncedSearch = useDebouncedValue(ui.search, 300)
