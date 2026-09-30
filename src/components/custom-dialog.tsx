@@ -44,18 +44,25 @@ export function CustomDialog({
 
       {open ? (
         <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className={cn("sm:max-w-md", contentClassName)}>
-            <DialogHeader>
+          <DialogContent
+            className={cn(
+              "flex max-h-[min(85vh,calc(100dvh-2rem))] flex-col gap-4 overflow-hidden sm:max-w-md",
+              contentClassName
+            )}
+          >
+            <DialogHeader className="shrink-0 pr-8">
               <DialogTitle className="text-lg font-bold">{title}</DialogTitle>
               {description ? (
                 <DialogDescription>{description}</DialogDescription>
               ) : null}
             </DialogHeader>
 
-            {children}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+              {children}
+            </div>
 
             {(footer || showDone) && (
-              <DialogFooter className="sm:justify-end">
+              <DialogFooter className="shrink-0 sm:justify-end">
                 {footer}
                 {showDone ? (
                   <DialogClose
