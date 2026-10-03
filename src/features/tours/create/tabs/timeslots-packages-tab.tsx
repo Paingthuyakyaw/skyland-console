@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { StringListField } from "@/features/tours/create/components/string-list-field"
-import { PricingTab } from "@/features/tours/create/tabs/pricing-tab"
 import {
   createEmptyPackage,
   createEmptyTimeslot,
@@ -68,7 +67,6 @@ export function TimeslotsPackagesTab({
   ) => void
   archivePending?: boolean
 }) {
-  const [pricingPackageId, setPricingPackageId] = useState<string | null>(null)
   const saved = Boolean(createdTour)
 
   const updateSlot = (key: string, patch: Partial<TimeslotDraft>) => {
@@ -100,22 +98,6 @@ export function TimeslotsPackagesTab({
     })
   }
 
-  if (pricingPackageId) {
-    return (
-      <div className="space-y-4">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPricingPackageId(null)}
-        >
-          Back to packages
-        </Button>
-        <PricingTab packageId={pricingPackageId} />
-      </div>
-    )
-  }
-
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
       <div className="space-y-4 xl:col-span-3">
@@ -124,8 +106,7 @@ export function TimeslotsPackagesTab({
             <div>
               <CardTitle>Tour → Timeslot → Timeslot Package</CardTitle>
               <p className="mt-1 text-xs text-muted-foreground">
-                Set default prices here; date overrides take precedence. Package
-                IDs and advanced pricing are available after the first save.
+                Set guest prices and private tour choices for each package.
               </p>
             </div>
             <Badge variant="secondary">
@@ -268,11 +249,6 @@ export function TimeslotsPackagesTab({
                               ? "Archive this saved package"
                               : "Remove this unsaved package"
                           }
-                          onOpenPricing={
-                            pkg.id
-                              ? () => setPricingPackageId(pkg.id!)
-                              : undefined
-                          }
                         />
                       )
                     })}
@@ -319,8 +295,8 @@ export function TimeslotsPackagesTab({
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            The selected package determines the final customer price. Calendar
-            availability never exposes editable prices.
+            The selected package and private tour option determine the booking
+            amount. Each private option is one total for the booking.
           </p>
           <div className="mt-4 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
             Timeslots, not calendar window IDs, are shown to staff throughout
@@ -340,7 +316,6 @@ function PackageCard({
   onRemove,
   archivePending,
   removeTitle,
-  onOpenPricing,
 }: {
   pkg: PackageDraft
   savedId?: string
@@ -349,7 +324,6 @@ function PackageCard({
   onRemove: () => void
   archivePending: boolean
   removeTitle: string
-  onOpenPricing?: () => void
 }) {
   const updateTier = (
     index: number,
@@ -393,23 +367,9 @@ function PackageCard({
         </button>
       </div>
 
-      {savedId || onOpenPricing ? (
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          {savedId ? (
-            <CopyId id={savedId} label="timeslotPackageId" />
-          ) : (
-            <span />
-          )}
-          {onOpenPricing ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={onOpenPricing}
-            >
-              Date & seasonal prices
-            </Button>
-          ) : null}
+      {savedId ? (
+        <div className="mb-3">
+          <CopyId id={savedId} label="timeslotPackageId" />
         </div>
       ) : null}
 
@@ -424,25 +384,6 @@ function PackageCard({
             onChange={(event) => onChange({ vehicleType: event.target.value })}
           />
         </Field>
-        <Field>
-          <FieldLabel className="text-[11px] text-muted-foreground">
-            Existing private tour price (AED)
-          </FieldLabel>
-          <Input
-            type="number"
-            min={0}
-            value={pkg.privateTourPrice ?? ""}
-            className="h-9"
-            onChange={(event) =>
-              onChange({
-                privateTourPrice:
-                  event.target.value === ""
-                    ? undefined
-                    : Number(event.target.value),
-              })
-            }
-          />
-        </Field>
       </div>
 
       <div className="mt-4 space-y-3 rounded-lg border p-3">
@@ -450,10 +391,8 @@ function PackageCard({
           <div>
             <p className="text-sm font-semibold">Private tour options</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Customers choose one option. Its price is one total for the
-              booking and uses the tour's payment choices. Leave this list empty
-              to use the existing private price. Date price overrides apply to
-              every private option.
+              Customers choose one option. Each option has a total booking price
+              and an optional description, and uses the tour's payment choices.
             </p>
           </div>
           <Button
@@ -465,7 +404,13 @@ function PackageCard({
               onChange({
                 privateTourOptions: [
                   ...(pkg.privateTourOptions ?? []),
-                  { name: "", description: "", price: 0 },
+                  {
+                    name: "",
+                    description: "",
+                    price: pkg.privateTourOptions?.length
+                      ? 0
+                      : (pkg.privateTourPrice ?? 0),
+                  },
                 ],
               })
             }
@@ -473,6 +418,33 @@ function PackageCard({
             <Plus className="size-3" /> Add option
           </Button>
         </div>
+        {!pkg.privateTourOptions?.length ? (
+          <Field>
+            <FieldLabel className="text-xs">
+              Private tour price (AED)
+            </FieldLabel>
+            <Input
+              aria-label="Private tour price (AED)"
+              type="number"
+              min={0}
+              step="0.01"
+              value={pkg.privateTourPrice ?? ""}
+              className="h-9"
+              onChange={(event) =>
+                onChange({
+                  privateTourPrice:
+                    event.target.value === ""
+                      ? undefined
+                      : Number(event.target.value),
+                })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              Existing tours keep this price until private options are added.
+              Add options to offer customers multiple choices.
+            </p>
+          </Field>
+        ) : null}
         {(pkg.privateTourOptions ?? []).map((option, index) => {
           const update = (patch: Partial<typeof option>) =>
             onChange({
