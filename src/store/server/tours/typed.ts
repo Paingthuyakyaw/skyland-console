@@ -150,6 +150,13 @@ export type GroupPriceTierRequest = {
 
 export type GroupPriceTierResponse = GroupPriceTierRequest
 
+export type PrivateTourOption = {
+  id?: string
+  name: string
+  description: string
+  price: number
+}
+
 export type TimeslotPackageRequest = {
   /** Stable identity of an existing package; omit only when adding a new package. */
   id?: string
@@ -161,6 +168,7 @@ export type TimeslotPackageRequest = {
   infantPrice?: number
   seniorPrice?: number
   privateTourPrice?: number
+  privateTourOptions?: PrivateTourOption[]
   featured: boolean
   groupPriceTiers: GroupPriceTierRequest[]
   checklist: string[]

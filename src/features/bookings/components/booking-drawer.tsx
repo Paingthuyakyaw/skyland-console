@@ -356,8 +356,16 @@ export function BookingDrawer({ bookingId, onClose }: BookingDrawerProps) {
                         <div className="mt-2 text-xs text-muted-foreground">
                           {guestBreakdown(item)}
                           {item.privateTour ? " · Private tour" : ""}
+                          {item.privateTourOption
+                            ? ` · ${item.privateTourOption.name}`
+                            : ""}
                           {item.promotionCode ? ` · ${item.promotionCode}` : ""}
                         </div>
+                        {item.privateTourOption?.description ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {item.privateTourOption.description}
+                          </p>
+                        ) : null}
                         {item.addons && item.addons.length > 0 ? (
                           <div className="mt-2 space-y-1 border-t border-border pt-2">
                             {item.addons.map((addon, addonIndex) => (

@@ -319,7 +319,21 @@ export function InquiryDrawer({
                           key={item.id || `${data.id}-${index}`}
                           className="flex items-start justify-between gap-3 text-sm"
                         >
-                          <span className="font-medium">{product.title}</span>
+                          <div>
+                            <span className="font-medium">{product.title}</span>
+                            {item.privateTourOption ? (
+                              <div className="mt-1 text-xs text-muted-foreground">
+                                <p className="font-medium">
+                                  Private tour · {item.privateTourOption.name}
+                                </p>
+                                {item.privateTourOption.description ? (
+                                  <p className="mt-1 whitespace-pre-line">
+                                    {item.privateTourOption.description}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
                           <span className="text-right text-muted-foreground">
                             Indicative only — not a final quote
                           </span>

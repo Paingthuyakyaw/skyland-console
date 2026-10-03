@@ -23,6 +23,12 @@ export type WorkflowItem = {
   childCount?: number
   infantCount?: number
   quantity?: number
+  privateTourOption?: {
+    id: string
+    name: string
+    description: string
+    price: number
+  } | null
 }
 
 export type BillingAddress = {

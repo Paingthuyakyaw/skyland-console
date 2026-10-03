@@ -430,7 +430,8 @@ export function PricingTab({ packageId }: { packageId?: string }) {
               <>
                 <p className="text-xs text-muted-foreground">
                   Enter at least one price. Blank fields keep their default or
-                  group price. Enter 0 for free admission. Private tour is a
+                  group price. Enter 0 for free admission. Private total
+                  overrides apply to every private option. Private tour is a
                   separate flat amount.
                 </p>
                 <div className="grid grid-cols-2 gap-3">

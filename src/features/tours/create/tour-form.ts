@@ -105,6 +105,7 @@ export function createEmptyPackage(featured = false): PackageDraft {
     infantPrice: 0,
     seniorPrice: 0,
     privateTourPrice: 0,
+    privateTourOptions: [],
     featured,
     groupPriceTiers: [{ minPax: 4, pricePerPax: 0 }],
     checklist: [""],
@@ -350,7 +351,8 @@ export function formFromDetail(detail: TourResponse): TourFormState {
                       childPrice: pkg.childPrice ?? 0,
                       infantPrice: pkg.infantPrice ?? 0,
                       seniorPrice: pkg.seniorPrice ?? 0,
-                      privateTourPrice: pkg.privateTourPrice ?? 0,
+                      privateTourPrice: pkg.privateTourPrice ?? undefined,
+                      privateTourOptions: pkg.privateTourOptions ?? [],
                       featured: pkg.featured,
                       groupPriceTiers:
                         pkg.groupPriceTiers?.length > 0
@@ -458,6 +460,32 @@ export function validateTourForm(form: TourFormState) {
     add("timeslots", "Add at least one timeslot with a package")
   }
 
+  for (const slot of form.timeslots) {
+    for (const pkg of slot.packages) {
+      for (const option of pkg.privateTourOptions ?? []) {
+        if (!option.name.trim() || option.name.trim().length > 160)
+          add(
+            "timeslots",
+            "Each private option needs a name of up to 160 characters"
+          )
+        if (option.description.length > 2000)
+          add(
+            "timeslots",
+            "Private option descriptions must be 2000 characters or fewer"
+          )
+        if (
+          !Number.isFinite(option.price) ||
+          option.price < 0 ||
+          option.price > 9999999999.99 ||
+          Math.abs(option.price * 100 - Math.round(option.price * 100)) > 0.0001
+        )
+          add(
+            "timeslots",
+            "Private option prices must be valid AED amounts with at most two decimal places"
+          )
+      }
+    }
+  }
   return errors
 }
 
@@ -484,7 +512,16 @@ function buildPackageRequest(
     childPrice: Math.max(0, toNumber(String(pkg.childPrice))),
     infantPrice: Math.max(0, toNumber(String(pkg.infantPrice))),
     seniorPrice: Math.max(0, toNumber(String(pkg.seniorPrice))),
-    privateTourPrice: Math.max(0, toNumber(String(pkg.privateTourPrice))),
+    privateTourPrice:
+      pkg.privateTourPrice == null
+        ? undefined
+        : Math.max(0, toNumber(String(pkg.privateTourPrice))),
+    privateTourOptions: (pkg.privateTourOptions ?? []).map((option) => ({
+      ...(option.id ? { id: option.id } : {}),
+      name: option.name.trim(),
+      description: option.description.trim(),
+      price: option.price,
+    })),
     featured: pkg.featured,
     groupPriceTiers: tiers,
     checklist: cleanList(pkg.checklist),

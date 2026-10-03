@@ -1626,7 +1626,8 @@ export function AvailabilityTab({
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">
                       Leave a fare blank to use its package or date-rule price.
-                      Private tour is one total per booking.
+                      Private tour is one total per booking. A private total
+                      override applies to every private option.
                     </p>
                     {(slot.packages ?? []).some(
                       (pkg) => pkg.groupPriceTiers?.length

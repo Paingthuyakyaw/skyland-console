@@ -67,6 +67,12 @@ export type BookingItem = {
   childCount?: number
   infantCount?: number
   privateTour?: boolean
+  privateTourOption?: {
+    id: string
+    name: string
+    description: string
+    price: number
+  }
   heldQuantity?: number
   promotionCode?: string
   unitPrice?: number

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import { StringListField } from "@/features/tours/create/components/string-list-field"
 import { PricingTab } from "@/features/tours/create/tabs/pricing-tab"
 import {
@@ -425,18 +426,123 @@ function PackageCard({
         </Field>
         <Field>
           <FieldLabel className="text-[11px] text-muted-foreground">
-            Private tour price (AED)
+            Existing private tour price (AED)
           </FieldLabel>
           <Input
             type="number"
             min={0}
-            value={pkg.privateTourPrice ?? 0}
+            value={pkg.privateTourPrice ?? ""}
             className="h-9"
             onChange={(event) =>
-              onChange({ privateTourPrice: Number(event.target.value) || 0 })
+              onChange({
+                privateTourPrice:
+                  event.target.value === ""
+                    ? undefined
+                    : Number(event.target.value),
+              })
             }
           />
         </Field>
+      </div>
+
+      <div className="mt-4 space-y-3 rounded-lg border p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold">Private tour options</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Customers choose one option. Its price is one total for the
+              booking and uses the tour's payment choices. Leave this list empty
+              to use the existing private price. Date price overrides apply to
+              every private option.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={(pkg.privateTourOptions?.length ?? 0) >= 20}
+            onClick={() =>
+              onChange({
+                privateTourOptions: [
+                  ...(pkg.privateTourOptions ?? []),
+                  { name: "", description: "", price: 0 },
+                ],
+              })
+            }
+          >
+            <Plus className="size-3" /> Add option
+          </Button>
+        </div>
+        {(pkg.privateTourOptions ?? []).map((option, index) => {
+          const update = (patch: Partial<typeof option>) =>
+            onChange({
+              privateTourOptions: (pkg.privateTourOptions ?? []).map(
+                (item, position) =>
+                  position === index ? { ...item, ...patch } : item
+              ),
+            })
+          return (
+            <div
+              key={option.id ?? index}
+              className="space-y-2 rounded-lg bg-muted/40 p-3"
+            >
+              <div className="grid items-end gap-2 sm:grid-cols-[1fr_150px_auto]">
+                <Field>
+                  <FieldLabel className="text-xs">Option name</FieldLabel>
+                  <Input
+                    aria-label={`Private option ${index + 1} name`}
+                    maxLength={160}
+                    value={option.name}
+                    onChange={(event) => update({ name: event.target.value })}
+                    placeholder="e.g. Private premium vehicle"
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel className="text-xs">Total price (AED)</FieldLabel>
+                  <Input
+                    aria-label={`Private option ${index + 1} price`}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={option.price}
+                    onChange={(event) =>
+                      update({ price: Number(event.target.value) })
+                    }
+                  />
+                </Field>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove private option ${index + 1}`}
+                  onClick={() =>
+                    onChange({
+                      privateTourOptions: (pkg.privateTourOptions ?? []).filter(
+                        (_, position) => position !== index
+                      ),
+                    })
+                  }
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+              <Field>
+                <FieldLabel className="text-xs">
+                  Description (optional)
+                </FieldLabel>
+                <Textarea
+                  maxLength={2000}
+                  value={option.description}
+                  aria-label={`Private option ${index + 1} description`}
+                  placeholder="Shown beside this option on the website"
+                  onChange={(event) =>
+                    update({ description: event.target.value })
+                  }
+                />
+              </Field>
+            </div>
+          )
+        })}
       </div>
 
       <Field className="mt-2.5">

@@ -233,7 +233,13 @@ const CreateTourFeature = ({ tourId }: CreateTourPageProps) => {
   ) => {
     setPage((current) => ({
       ...current,
-      form: { ...nextForm, version: tour.version ?? nextForm.version },
+      // Rehydrate catalog children so newly created private options retain their server IDs
+      // on the next save instead of being removed and recreated.
+      form: {
+        ...nextForm,
+        timeslots: formFromDetail(tour).timeslots,
+        version: tour.version ?? nextForm.version,
+      },
       createdTour: tour,
       savedAt: lastSavedLabel(tour.updatedAt) || lastSavedLabel(),
       activeTab: nextTab ?? current.activeTab,
