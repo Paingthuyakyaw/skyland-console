@@ -40,6 +40,7 @@ export const adminNavItems: AdminNavItem[] = [
   ...comboTourNavItems,
   { label: "Tour Inquiries", to: "/inquiries", icon: Inbox },
   ...comboQuoteNavItems,
+  { label: "Holiday Package", to: "/holiday-packages", icon: CakeSlice },
   { label: "Holiday Package Quotes", to: "/holiday-quotes", icon: CakeSlice },
   { label: "Customers", to: "/customers", icon: Users },
   { label: "Staff", to: "/staff", icon: UsersRound },
