@@ -38,6 +38,8 @@ import { Route as AuthenticatedToursIndexRouteImport } from "./routes/_authentic
 import { Route as AuthenticatedToursIdRouteImport } from "./routes/_authenticated/tours/$id"
 import { Route as AuthenticatedToursNewRouteImport } from "./routes/_authenticated/tours/new"
 import { Route as AuthenticatedWebsiteIndexRouteImport } from "./routes/_authenticated/website/index"
+import { Route as AuthenticatedHolidayPackagesIdReviewsRouteImport } from "./routes/_authenticated/holiday-packages/$id_.reviews"
+import { Route as AuthenticatedToursIdReviewsRouteImport } from "./routes/_authenticated/tours/$id_.reviews"
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: "/_authenticated",
@@ -204,6 +206,18 @@ const AuthenticatedWebsiteIndexRoute =
     path: "/website/",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedHolidayPackagesIdReviewsRoute =
+  AuthenticatedHolidayPackagesIdReviewsRouteImport.update({
+    id: "/holiday-packages/$id_/reviews",
+    path: "/holiday-packages/$id/reviews",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedToursIdReviewsRoute =
+  AuthenticatedToursIdReviewsRouteImport.update({
+    id: "/tours/$id_/reviews",
+    path: "/tours/$id/reviews",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof AuthenticatedIndexRoute
@@ -234,6 +248,8 @@ export interface FileRoutesByFullPath {
   "/staff/": typeof AuthenticatedStaffIndexRoute
   "/tours/": typeof AuthenticatedToursIndexRoute
   "/website/": typeof AuthenticatedWebsiteIndexRoute
+  "/holiday-packages/$id/reviews": typeof AuthenticatedHolidayPackagesIdReviewsRoute
+  "/tours/$id/reviews": typeof AuthenticatedToursIdReviewsRoute
 }
 export interface FileRoutesByTo {
   "/login": typeof authLoginRoute
@@ -264,6 +280,8 @@ export interface FileRoutesByTo {
   "/staff": typeof AuthenticatedStaffIndexRoute
   "/tours": typeof AuthenticatedToursIndexRoute
   "/website": typeof AuthenticatedWebsiteIndexRoute
+  "/holiday-packages/$id/reviews": typeof AuthenticatedHolidayPackagesIdReviewsRoute
+  "/tours/$id/reviews": typeof AuthenticatedToursIdReviewsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -296,6 +314,8 @@ export interface FileRoutesById {
   "/_authenticated/staff/": typeof AuthenticatedStaffIndexRoute
   "/_authenticated/tours/": typeof AuthenticatedToursIndexRoute
   "/_authenticated/website/": typeof AuthenticatedWebsiteIndexRoute
+  "/_authenticated/holiday-packages/$id_/reviews": typeof AuthenticatedHolidayPackagesIdReviewsRoute
+  "/_authenticated/tours/$id_/reviews": typeof AuthenticatedToursIdReviewsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -328,6 +348,8 @@ export interface FileRouteTypes {
     | "/staff/"
     | "/tours/"
     | "/website/"
+    | "/holiday-packages/$id/reviews"
+    | "/tours/$id/reviews"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/login"
@@ -358,6 +380,8 @@ export interface FileRouteTypes {
     | "/staff"
     | "/tours"
     | "/website"
+    | "/holiday-packages/$id/reviews"
+    | "/tours/$id/reviews"
   id:
     | "__root__"
     | "/_authenticated"
@@ -389,6 +413,8 @@ export interface FileRouteTypes {
     | "/_authenticated/staff/"
     | "/_authenticated/tours/"
     | "/_authenticated/website/"
+    | "/_authenticated/holiday-packages/$id_/reviews"
+    | "/_authenticated/tours/$id_/reviews"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -601,6 +627,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedWebsiteIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/holiday-packages/$id_/reviews": {
+      id: "/_authenticated/holiday-packages/$id_/reviews"
+      path: "/holiday-packages/$id/reviews"
+      fullPath: "/holiday-packages/$id/reviews"
+      preLoaderRoute: typeof AuthenticatedHolidayPackagesIdReviewsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/tours/$id_/reviews": {
+      id: "/_authenticated/tours/$id_/reviews"
+      path: "/tours/$id/reviews"
+      fullPath: "/tours/$id/reviews"
+      preLoaderRoute: typeof AuthenticatedToursIdReviewsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -632,6 +672,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedStaffIndexRoute: typeof AuthenticatedStaffIndexRoute
   AuthenticatedToursIndexRoute: typeof AuthenticatedToursIndexRoute
   AuthenticatedWebsiteIndexRoute: typeof AuthenticatedWebsiteIndexRoute
+  AuthenticatedHolidayPackagesIdReviewsRoute: typeof AuthenticatedHolidayPackagesIdReviewsRoute
+  AuthenticatedToursIdReviewsRoute: typeof AuthenticatedToursIdReviewsRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -663,6 +705,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedStaffIndexRoute: AuthenticatedStaffIndexRoute,
   AuthenticatedToursIndexRoute: AuthenticatedToursIndexRoute,
   AuthenticatedWebsiteIndexRoute: AuthenticatedWebsiteIndexRoute,
+  AuthenticatedHolidayPackagesIdReviewsRoute:
+    AuthenticatedHolidayPackagesIdReviewsRoute,
+  AuthenticatedToursIdReviewsRoute: AuthenticatedToursIdReviewsRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

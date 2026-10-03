@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Search } from "lucide-react"
 
 import { ListPagination } from "@/components/list-pagination"
@@ -6,6 +7,7 @@ import { TourCard } from "@/features/tours/components/tour-card"
 import type { TourSummary } from "@/store/server/tours/typed"
 
 type ToursGridProps = {
+  categoryFilter: ReactNode
   search: string
   onSearchChange: (value: string) => void
   tours: TourSummary[]
@@ -22,6 +24,7 @@ type ToursGridProps = {
 }
 
 export function ToursGrid({
+  categoryFilter,
   search,
   onSearchChange,
   tours,
@@ -38,14 +41,17 @@ export function ToursGrid({
 }: ToursGridProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search tours"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative w-full max-w-md">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search tours"
+          />
+        </div>
+        {categoryFilter}
       </div>
 
       {isPending ? (

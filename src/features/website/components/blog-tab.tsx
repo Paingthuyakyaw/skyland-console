@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { isEmptyHtml, RichTextEditor } from "@/components/rich-text-editor"
+import { isEmptyHtml } from "@/lib/rich-text"
+import { RichTextEditor } from "@/components/rich-text-editor"
 import { DeleteCmsDialog } from "@/features/website/components/delete-cms-dialog"
 import {
   BLOG_STATUS_ITEMS,

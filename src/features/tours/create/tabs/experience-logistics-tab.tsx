@@ -1,3 +1,6 @@
+import { RichTextListField } from "@/features/tours/create/components/rich-text-list-field"
+import { richTextPlainText } from "@/lib/rich-text"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -199,21 +202,17 @@ export function ExperienceLogisticsTab({
                 }
               />
             </Field>
-            <StringListField
+            <RichTextListField
               label="Inclusions"
               values={form.inclusions}
               onChange={(inclusions) => onChange({ ...form, inclusions })}
               placeholder="Hotel pickup"
-              addLabel="Add inclusion"
-              tone="include"
             />
-            <StringListField
+            <RichTextListField
               label="Exclusions"
               values={form.exclusions}
               onChange={(exclusions) => onChange({ ...form, exclusions })}
               placeholder="Personal expenses"
-              addLabel="Add exclusion"
-              tone="exclude"
             />
             <div className="sm:col-span-2">
               <StringListField
@@ -225,14 +224,13 @@ export function ExperienceLogisticsTab({
               />
             </div>
             <div className="sm:col-span-2">
-              <StringListField
+              <RichTextListField
                 label="Terms and conditions"
                 values={form.termsAndConditions}
                 onChange={(termsAndConditions) =>
                   onChange({ ...form, termsAndConditions })
                 }
                 placeholder="Cancellation and participation terms"
-                addLabel="Add term"
               />
             </div>
           </CardContent>
@@ -268,15 +266,11 @@ export function ExperienceLogisticsTab({
             />
             <PreviewRow
               label="Included"
-              value={
-                form.inclusions.filter(Boolean).join(", ") || "None listed"
-              }
+              value={richTextPlainText(form.inclusions) || "None listed"}
             />
             <PreviewRow
               label="Excluded"
-              value={
-                form.exclusions.filter(Boolean).join(", ") || "None listed"
-              }
+              value={richTextPlainText(form.exclusions) || "None listed"}
             />
           </CardContent>
         </Card>

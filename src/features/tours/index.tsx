@@ -1,5 +1,7 @@
+import { CategoryFilter } from "@/components/category-filter"
+import { useTourCategories } from "@/store/server/tours/categories"
 import { useNavigate } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -20,6 +22,7 @@ type TourToDelete = {
 type ToursUi = {
   categoriesOpen: boolean
   search: string
+  categoryId: string
   page: number
   deleting: TourToDelete | null
 }
@@ -29,18 +32,19 @@ const ToursFeature = () => {
   const [ui, setUi] = useState<ToursUi>({
     categoriesOpen: false,
     search: "",
+    categoryId: "",
     page: 0,
     deleting: null,
+  })
+  const { data: categories = [] } = useTourCategories(true, {
+    level: "PRIMARY",
   })
   const debouncedSearch = useDebouncedValue(ui.search, 300)
   const deleteTour = useDeleteTour()
 
-  useEffect(() => {
-    setUi((current) => (current.page === 0 ? current : { ...current, page: 0 }))
-  }, [debouncedSearch])
-
-  const { data, isPending, isError } = useTours({
+  const { data, isPending, isError, isFetching } = useTours({
     query: debouncedSearch.trim() || undefined,
+    primaryCategoryId: ui.categoryId || undefined,
     page: ui.page,
     size: PAGE_SIZE,
   })
@@ -54,15 +58,9 @@ const ToursFeature = () => {
         ? Math.max(1, Math.ceil(totalElements / PAGE_SIZE))
         : 0
 
-  useEffect(() => {
-    if (totalPages <= 0) return
-    setUi((current) => {
-      const nextPage = Math.min(current.page, totalPages - 1)
-      return nextPage === current.page
-        ? current
-        : { ...current, page: nextPage }
-    })
-  }, [ui.page, totalPages])
+  if (data && !isFetching && ui.page > 0 && ui.page >= totalPages) {
+    setUi((current) => ({ ...current, page: Math.max(0, totalPages - 1) }))
+  }
 
   const handleConfirmDelete = () => {
     if (!ui.deleting) return
@@ -108,9 +106,18 @@ const ToursFeature = () => {
       />
 
       <ToursGrid
+        categoryFilter={
+          <CategoryFilter
+            value={ui.categoryId}
+            categories={categories}
+            onChange={(categoryId) =>
+              setUi((current) => ({ ...current, categoryId, page: 0 }))
+            }
+          />
+        }
         search={ui.search}
         onSearchChange={(search) =>
-          setUi((current) => ({ ...current, search }))
+          setUi((current) => ({ ...current, search, page: 0 }))
         }
         tours={tours}
         isPending={isPending}

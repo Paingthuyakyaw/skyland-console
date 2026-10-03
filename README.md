@@ -30,3 +30,13 @@ PDF/JPEG/PNG and exposes an authenticated download in **Quote history**.
 The backend flow and migration contract is maintained in
 [DATE_PRICING_AND_QUOTE_ATTACHMENTS.md](../skyland-backend/docs/DATE_PRICING_AND_QUOTE_ATTACHMENTS.md).
 Deploy backend Flyway V35/V36 before this console update.
+
+## Tour content and reviews
+
+Tour and holiday package listings support category filters. The star action opens a product's
+review page (`/tours/:id/reviews` or `/holiday-packages/:id/reviews`), where staff can publish
+guest reviews with ratings from 1 to 5. Reviews appear on the website for published products.
+
+Tour inclusions, exclusions, and terms use rich text editors and retain existing plain text
+content. Attraction, hot tour, hotel pickup, and badge logo inputs are hidden; existing values
+are preserved when editing. The backend accepts rich text sections up to 20,000 characters.

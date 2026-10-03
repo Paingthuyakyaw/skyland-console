@@ -1,4 +1,4 @@
-import { isEmptyHtml } from "@/components/rich-text-editor"
+import { isEmptyHtml } from "@/lib/rich-text"
 import { slugify } from "@/features/tours/components/utils"
 import type {
   AddonRequest,

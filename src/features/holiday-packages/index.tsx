@@ -1,6 +1,8 @@
+import { CategoryFilter } from "@/components/category-filter"
+import { useHolidayPackageCategories } from "@/store/server/holiday/categories"
 import { useNavigate } from "@tanstack/react-router"
 import { Plus } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +27,7 @@ type PackageToDelete = {
 type HolidayPackagesUi = {
   categoriesOpen: boolean
   search: string
+  categoryId: string
   page: number
   deleting: PackageToDelete | null
 }
@@ -34,18 +37,17 @@ const HolidayPackageFeature = () => {
   const [ui, setUi] = useState<HolidayPackagesUi>({
     categoriesOpen: false,
     search: "",
+    categoryId: "",
     page: 0,
     deleting: null,
   })
+  const { data: categories = [] } = useHolidayPackageCategories()
   const debouncedSearch = useDebouncedValue(ui.search, 300)
   const deletePackage = useDeleteHolidayPackage()
 
-  useEffect(() => {
-    setUi((current) => ({ ...current, page: 0 }))
-  }, [debouncedSearch])
-
-  const { data, isPending, isError } = useHolidayPackages({
+  const { data, isPending, isError, isFetching } = useHolidayPackages({
     query: debouncedSearch.trim() || undefined,
+    categoryId: ui.categoryId || undefined,
     page: ui.page,
     size: PAGE_SIZE,
   })
@@ -59,11 +61,9 @@ const HolidayPackageFeature = () => {
         ? Math.max(1, Math.ceil(totalElements / PAGE_SIZE))
         : 0
 
-  useEffect(() => {
-    if (totalPages > 0 && ui.page > totalPages - 1) {
-      setUi((current) => ({ ...current, page: totalPages - 1 }))
-    }
-  }, [ui.page, totalPages])
+  if (data && !isFetching && ui.page > 0 && ui.page >= totalPages) {
+    setUi((current) => ({ ...current, page: Math.max(0, totalPages - 1) }))
+  }
 
   const handleConfirmDelete = () => {
     if (!ui.deleting) return
@@ -115,9 +115,18 @@ const HolidayPackageFeature = () => {
 
         <TabsContent value="packages">
           <HolidayPackagesTab
+            categoryFilter={
+              <CategoryFilter
+                value={ui.categoryId}
+                categories={categories}
+                onChange={(categoryId) =>
+                  setUi((current) => ({ ...current, categoryId, page: 0 }))
+                }
+              />
+            }
             search={ui.search}
             onSearchChange={(search) =>
-              setUi((current) => ({ ...current, search }))
+              setUi((current) => ({ ...current, search, page: 0 }))
             }
             packages={packages}
             isPending={isPending}

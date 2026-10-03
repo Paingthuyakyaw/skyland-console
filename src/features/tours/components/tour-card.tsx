@@ -1,4 +1,5 @@
-import { Pencil, Trash2 } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { Star, Pencil, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -77,6 +78,15 @@ export function TourCard({
               <Pencil className="size-3.5" />
               Edit
             </Button>
+            <Link
+              to="/tours/$id/reviews"
+              params={{ id: tour.id }}
+              aria-label={`Reviews and rating for ${tour.title}`}
+              title="Reviews and rating"
+              className="inline-flex size-8 items-center justify-center rounded-md border border-border hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <Star className="size-4" />
+            </Link>
             <Button
               type="button"
               size="icon-sm"

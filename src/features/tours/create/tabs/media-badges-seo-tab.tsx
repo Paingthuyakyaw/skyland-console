@@ -155,24 +155,7 @@ export function MediaBadgesSeoTab({
           </CardHeader>
           <CardContent className="space-y-3">
             {form.badges.map((badge, index) => (
-              <div key={badge.key} className="grid gap-3 sm:grid-cols-3">
-                <Field>
-                  <FieldLabel>Logo URL</FieldLabel>
-                  <Input
-                    value={badge.logoUrl}
-                    placeholder="https://"
-                    onChange={(event) =>
-                      onChange({
-                        ...form,
-                        badges: form.badges.map((item, itemIndex) =>
-                          itemIndex === index
-                            ? { ...item, logoUrl: event.target.value }
-                            : item
-                        ),
-                      })
-                    }
-                  />
-                </Field>
+              <div key={badge.key} className="grid gap-3 sm:grid-cols-2">
                 <Field>
                   <FieldLabel>Title</FieldLabel>
                   <Input

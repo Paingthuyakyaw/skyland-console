@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Search } from "lucide-react"
 
 import { ListPagination } from "@/components/list-pagination"
@@ -6,6 +7,7 @@ import { HolidayPackageCard } from "@/features/holiday-packages/components/holid
 import type { HolidayPackage } from "@/store/server/holiday/typed"
 
 type HolidayPackagesTabProps = {
+  categoryFilter: ReactNode
   search: string
   onSearchChange: (value: string) => void
   packages: HolidayPackage[]
@@ -22,6 +24,7 @@ type HolidayPackagesTabProps = {
 }
 
 export function HolidayPackagesTab({
+  categoryFilter,
   search,
   onSearchChange,
   packages,
@@ -38,14 +41,17 @@ export function HolidayPackagesTab({
 }: HolidayPackagesTabProps) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          className="pl-9"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Search holiday packages"
-        />
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative w-full max-w-md">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Search holiday packages"
+          />
+        </div>
+        {categoryFilter}
       </div>
 
       {isPending ? (

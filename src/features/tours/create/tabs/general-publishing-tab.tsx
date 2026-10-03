@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import {
   applyTitleChange,
@@ -232,30 +231,6 @@ export function GeneralPublishingTab({
               Tour display price is used for catalog presentation. Final
               customer price is resolved from the selected Timeslot Package.
             </p>
-            {(
-              [
-                ["isAttraction", "Attraction", form.isAttraction],
-                ["isHot", "Hot tour", form.isHot],
-                [
-                  "hotelPickupIncluded",
-                  "Hotel pickup included",
-                  form.hotelPickupIncluded,
-                ],
-              ] as const
-            ).map(([key, label, checked]) => (
-              <div
-                key={key}
-                className="flex items-center justify-between rounded-lg bg-muted/70 px-4 py-3"
-              >
-                <div className="text-sm font-bold">{label}</div>
-                <Switch
-                  checked={checked}
-                  onCheckedChange={(value) =>
-                    onChange({ ...form, [key]: value })
-                  }
-                />
-              </div>
-            ))}
           </CardContent>
         </Card>
       </div>

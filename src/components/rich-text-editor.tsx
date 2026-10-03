@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react"
 
+import { isEmptyHtml, sanitizeRichText } from "@/lib/rich-text"
+
 import { cn } from "@/lib/utils"
 
 const TOOLS = [
@@ -9,16 +11,6 @@ const TOOLS = [
   { label: "H2", command: "h2", className: "" },
   { label: "List", command: "list", className: "" },
 ] as const
-
-export function isEmptyHtml(html: string) {
-  return (
-    html
-      .replace(/<br\s*\/?>/gi, "")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/<[^>]+>/g, "")
-      .trim().length === 0
-  )
-}
 
 export function RichTextEditor({
   id,
@@ -41,7 +33,7 @@ export function RichTextEditor({
     if (!editor) return
     if (document.activeElement === editor) return
     if (editor.innerHTML !== value) {
-      editor.innerHTML = value
+      editor.innerHTML = sanitizeRichText(value)
       lastEmitted.current = value
     }
   }, [value])
@@ -97,9 +89,23 @@ export function RichTextEditor({
           ref={editorRef}
           role="textbox"
           aria-multiline="true"
+          aria-label={placeholder}
           contentEditable
           suppressContentEditableWarning
           className="min-h-48 px-3 py-2 text-sm text-foreground outline-none [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5"
+          onPaste={(event) => {
+            event.preventDefault()
+            const html = event.clipboardData.getData("text/html")
+            if (html)
+              document.execCommand("insertHTML", false, sanitizeRichText(html))
+            else
+              document.execCommand(
+                "insertText",
+                false,
+                event.clipboardData.getData("text/plain")
+              )
+            emit()
+          }}
           onInput={emit}
           onBlur={emit}
         />
