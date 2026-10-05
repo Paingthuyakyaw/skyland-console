@@ -40,3 +40,5 @@ guest reviews with ratings from 1 to 5. Reviews appear on the website for publis
 Tour inclusions, exclusions, and terms use rich text editors and retain existing plain text
 content. Attraction, hot tour, hotel pickup, and badge logo inputs are hidden; existing values
 are preserved when editing. The backend accepts rich text sections up to 20,000 characters.
+
+hello world
