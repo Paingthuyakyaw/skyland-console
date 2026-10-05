@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { StringListField } from "@/features/tours/create/components/string-list-field"
+import { PrivateTourOptionsSummary } from "@/features/tours/create/components/private-tour-options-summary"
 import {
   createEmptyPackage,
   createEmptyTimeslot,
@@ -83,8 +84,18 @@ export function TimeslotsPackagesTab({
     packageKey: string,
     patch: Partial<PackageDraft>
   ) => {
+    const currentPackage = form.timeslots
+      .find((slot) => slot.key === slotKey)
+      ?.packages.find((pkg) => pkg.key === packageKey)
+    const addsFirstPrivateOption =
+      Boolean(patch.privateTourOptions?.length) &&
+      !currentPackage?.privateTourOptions?.length
     onChange({
       ...form,
+      bookingMode:
+        addsFirstPrivateOption && form.bookingMode === "SHARED"
+          ? "BOTH"
+          : form.bookingMode,
       timeslots: form.timeslots.map((slot) =>
         slot.key !== slotKey
           ? slot
@@ -298,6 +309,20 @@ export function TimeslotsPackagesTab({
             The selected package and private tour option determine the booking
             amount. Each private option is one total for the booking.
           </p>
+          {form.timeslots.flatMap((slot) =>
+            slot.packages
+              .filter((pkg) => pkg.privateTourOptions?.length)
+              .map((pkg) => (
+                <div key={pkg.key} className="mt-4 space-y-2">
+                  <p className="text-xs font-bold">
+                    {slot.name} · {pkg.name}
+                  </p>
+                  <PrivateTourOptionsSummary
+                    options={pkg.privateTourOptions ?? []}
+                  />
+                </div>
+              ))
+          )}
           <div className="mt-4 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
             Timeslots, not calendar window IDs, are shown to staff throughout
             this editor.

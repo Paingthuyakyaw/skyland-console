@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils"
 import type { BookingMode, PaymentOption } from "@/store/server/tours/typed"
 
 const BOOKING_MODES: Array<{ value: BookingMode; label: string }> = [
-  { value: "SHARED", label: "Book Online" },
-  { value: "PRIVATE", label: "Inquiry Only" },
-  { value: "BOTH", label: "Both" },
+  { value: "SHARED", label: "Shared tours" },
+  { value: "PRIVATE", label: "Private tours" },
+  { value: "BOTH", label: "Shared and private tours" },
 ]
 
 const PAYMENT_OPTIONS: Array<{
@@ -175,6 +175,7 @@ export function BookingCapacityTab({
                 <button
                   key={item.value}
                   type="button"
+                  aria-pressed={form.bookingMode === item.value}
                   onClick={() => onChange({ ...form, bookingMode: item.value })}
                   className={cn(
                     "rounded-lg px-4 py-2 text-xs font-bold transition-colors",
@@ -187,6 +188,10 @@ export function BookingCapacityTab({
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Private bookings use the options saved in Timeslots & Packages.
+              Each option uses the payment choices enabled below.
+            </p>
           </Field>
           <Field>
             <FieldLabel>Payment options</FieldLabel>

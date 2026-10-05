@@ -135,6 +135,7 @@ export function useCreateTour() {
   return useMutation({
     mutationFn: createTour,
     onSuccess: (response) => {
+      queryClient.setQueryData([...TOURS_KEY, response.data.id], response.data)
       toast.success(response.message || "Tour created")
       invalidateTours()
     },
@@ -148,6 +149,7 @@ export function useUpdateTour() {
   return useMutation({
     mutationFn: updateTour,
     onSuccess: (response, { id }) => {
+      queryClient.setQueryData([...TOURS_KEY, id], response.data)
       toast.success(response.message || "Tour updated")
       invalidateTours()
       void queryClient.invalidateQueries({ queryKey: [...TOURS_KEY, id] })

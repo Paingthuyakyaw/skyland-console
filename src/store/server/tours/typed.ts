@@ -432,6 +432,7 @@ export type PackagePricePreview = {
   timeslotPackageId: string
   prices: DatePrices
   groupPrices: Array<{ minPax: number; adultPricePerPax: number }>
+  privateTourOptions: Array<{ id: string; price: number }>
 }
 
 export type BulkAvailabilityRequest = {
